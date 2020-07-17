@@ -17,7 +17,7 @@
 <nav id="header" class="navbar navbar-expand-sm navbar-light bg-light">
   <a class="navbar-brand mr-auto">
     <img src="/images/logo.png" width="30" height="30" class="d-inline-block align-top">
-    <span class="logo logo-buttons">AirSounds</span>
+    <span class="logo logo-buttons"></span>
   </a>
   <div class="navbar-nav mr-auto">
     <a class="nav-link dropdown-toggle" href="#" id="placesDropdown" role="button" data-target="#placePicker" data-toggle="collapse" aria-controls="placePicker" aria-expanded="false">
@@ -42,7 +42,7 @@
   <div class="collapse" id="datesPicker">
     <div class="p-4">
     <ul class="list-group">
-      <li v-for="day in days" class="list-group-item d-flex justify-content-between align-items-center">
+      <li v-for="day in currentPlace.days" class="list-group-item d-flex justify-content-between align-items-center">
         {{ day.text }}
         <a v-for="hour in day.hours" href="#" :onclick="hour.call">
           <span :class="hour.badge"> 
@@ -59,7 +59,7 @@
     <ul class="list-group">
       <li v-for="place in places" class="list-group-item d-flex justify-content-between align-items-center">
         <a href="#" :onclick="place.call">
-            {{ place.text }}
+            {{ place.name }}
         </a>
       </li>
     </ul>

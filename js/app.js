@@ -7,10 +7,11 @@ var currentTime = new Date();
 // Truncate time to 3h.
 currentTime.setHours(Math.round(currentTime.getHours() / 3) * 3)
 
-var currentDate = new Date();
-currentDate.setHours(0);
-
-var currentPlottedData = null;
+var currentDataIdx = {
+  place: 0,
+  day: 0,
+  hour: 0,
+}
 
 const graphMaxRatio = 0.6;
 function calcPlotSize() {
@@ -22,8 +23,6 @@ function calcPlotSize() {
   return {w: w, h: h}
 }
 var currentPlotSize = calcPlotSize();
-
-const place = "megido";
 
 const M = -1000.0 / 3.0
 const altTrigger = 4000.0
@@ -37,6 +36,7 @@ const xTicks = 10;
 const yTicks = 15;
 
 async function main() {
+  // Resize plot when window is being resized.
   d3.select(window).on('resize.updatesvg', function() {
     size = calcPlotSize()
     if (size.w != currentPlotSize.w || size.h != currentPlotSize.h) {
@@ -45,6 +45,7 @@ async function main() {
     }
   });
   
+  // Fetch index.
   idexResp = await fetch("/data/index.json");
   if (!idexResp.ok) {
     error("Failed getting index", `Response: ${idexResp.status}`);
@@ -52,80 +53,90 @@ async function main() {
   }
   idx = await idexResp.json()
 
-  index.$data.days = timeLine(new Date(idx.NoaaEnd))
-  index.$data.places = [
-    {text: place},
-  ]
+  index.$data.places = idx.Locations
+  index.$data.currentPlace = idx.Locations[0]
+  
+  for (i in index.$data.places) {
+    createDays(index.$data.places[i], new Date(idx.NoaaEnd))
+    index.$data.places[i].call = `updatePlace(${i})`;
+  }
 
   // Update the plot with the most recent data first.
   console.log("fetching immediate data...")
   hoursIndex = importantHours.filter(h => h <= new Date().getHours()).length-1;
-  await fetchTime(index.$data.days[0], index.$data.days[0].hours[hoursIndex])
-  update(0, hoursIndex)
+  await fetchTime(index.$data.places[0].days[0].hours[hoursIndex])
+  updateTime(0, hoursIndex)
 
   // Fetch all other data in background.
   console.log("fetching all data in background...")
-  await fetchData(index.$data.days);
+  await fetchAllData();
 }
 
-function timeLine(maxTime) {
-  var days = []
-  var t = currentDate
+function createDays(place, maxTime) {
+  place.days = []
+
+  // Iterate over time slots. Start from today's morning.
+  var t = new Date();
+  t.setHours(0);
+  
   var dayI = 0
   while (true) {  
     var day = {
       text: dateFormat(t),
       hours: [],
+      place: place,
     }
     for (hourI in importantHours) {
       hour = importantHours[hourI]
       t.setHours(hour)
       if (t > maxTime) {
-        return days
+        return
       }
       day.hours.push({
+        place: place,
+        day: day,
         hour: hour,
         text: pad(hour),
-        call: 'update(' + dayI + ', ' + hourI + ')',
-        data: null,
-        badge: null,
+        call: 'updateTime(' + dayI + ', ' + hourI + ')',
+        data: {},
       })
     }
     t.setHours(0)
     t.setDate(t.getDate() + 1);
-    days.push(day)
+    place.days.push(day)
     dayI++;
   }
 }
 
-async function fetchData(timeline) {
-  for (dayI in timeline) {
-    day = timeline[dayI]
-    for (hourI in day.hours) {
-      hour = day.hours[hourI]
-      await fetchTime(day, hour);
+async function fetchAllData() {
+  for (placeI in index.$data.places) {
+    place = index.$data.places[placeI]
+    for (dayI in place.days) {
+      day = place.days[dayI]
+      for (hourI in day.hours) {
+        hour = day.hours[hourI]
+        await fetchTime(hour);
+      }
     }
   }
 }
 
-async function fetchTime(day, hour) {
-
+async function fetchTime(hour) {
+  console.log(`Fetching ${hour.place.name} at ${hour.day.text} ${hour.text}:00`);
   hour.badge = "badge badge-danger";
-  hour.data = null
-
-  var datePath = "/data/" + day.text.replace('-', '/').replace('-', '/') + '/' + hour.text + "/";
-  console.log("fetching data for ", day.text, hour.text)
-  const noaaResp = await fetch(datePath + `noaa-${place}.json`)
-  const imsResp = await fetch(datePath + `ims-${place}.json`)
+  
+  var datePath = "/data/" + hour.day.text.replace('-', '/').replace('-', '/') + '/' + hour.text + "/";
+  const noaaResp = await fetch(datePath + `noaa-${hour.place.name}.json`)
+  const imsResp = await fetch(datePath + `ims-${hour.place.name}.json`)
 
   var errors = 0
 
   if (!noaaResp.ok) {
-    console.warn(`NOAA data for ${day.text}, ${hour.text}:00 is not available (${noaaResp.status})`)
+    console.warn(`NOAA data for ${hour.day.text}, ${hour.text}:00 is not available (${noaaResp.status})`)
     errors++
   }
   if (!imsResp.ok) {
-    console.warn(`IMS data for ${day.text}, ${hour.hour}:00 is not available (${imsResp.status})`)
+    console.warn(`IMS data for ${hour.day.text}, ${hour.hour}:00 is not available (${imsResp.status})`)
     errors++
   }
 
@@ -137,7 +148,8 @@ async function fetchTime(day, hour) {
     noaa: await noaaResp.json(),
     ims: await imsResp.json(),
   }
-  hour.badge = "badge badge-success"
+  hour.badge = "badge badge-success";
+  console.log(`Successful: ${hour.place.name} at ${hour.day.text} ${hour.text}:00`);
 }
 
 function y(x, x0, y0) {
@@ -160,8 +172,8 @@ var header = new Vue({
 var index = new Vue({
   el: "#index",
   data: {
-    days: [],
     places: [],
+    currentPlace: {},
   },
 })
 
@@ -240,8 +252,20 @@ function interpolate(p1, p2, y) {
   return p1[0] - (p1[1] - y) / m
 }
 
-function plotData(data) {
-  data = currentPlottedData;
+function plotData() {
+  hour = index.$data.places[currentDataIdx.place].days[currentDataIdx.day].hours[currentDataIdx.hour];
+
+  // Update headers.
+  header.$data.day = hour.day.text
+  header.$data.hour = hour.text
+  header.$data.place = hour.place.name
+
+  if (hour.data == undefined) {
+    error("No data", "for chosen date");
+    return;
+  }
+  
+  data = hour.data;
   width = currentPlotSize.w;
   height = currentPlotSize.h;
 
@@ -249,7 +273,7 @@ function plotData(data) {
   let temp = data.noaa['Temp'];
   let dew = data.noaa['Dew'];
   let t0 = data.ims['Temp'];
-  let h0 = 200;
+  let h0 = hour.place.alt; // Ground altitude.
 
   // Thermal index calculations.
   TI = intersect(temp, alt, t0, h0, M)
@@ -273,10 +297,8 @@ function plotData(data) {
 
   // Calculate the trigger temperature.
   altTriggerT = intersect(alt, temp, altTrigger, 0, 1)
-  console.log("alt trigger t: ", altTriggerT)
   if (altTriggerT != null) {
     trig = x(h0, altTriggerT[1], altTrigger)
-    console.log("trig: ", trig)
   }
   
   margin = ({top: 20, right: 30, bottom: 30, left: 40})
@@ -521,24 +543,25 @@ function plotData(data) {
   }
 }
 
-async function update(dayi, houri) {
+async function updateTime(dayi, houri) {
   // Hide menus.
   $('#datesPicker').collapse('hide');
   $('#placePicker').collapse('hide');
 
-  day = index.$data.days[dayi]
-  hour = day.hours[houri]
+  currentDataIdx.day = dayi
+  currentDataIdx.hour = houri
 
-  // Update headers.
-  header.$data.day = day.text
-  header.$data.hour = hour.text
-  header.$data.place = place
+  plotData();
+}
 
-  if (hour.data == undefined) {
-    error("No data", "for chosen date");
-    return;
-  }
-  currentPlottedData = hour.data;
+async function updatePlace(placeI) {
+  // Hide menus.
+  $('#datesPicker').collapse('hide');
+  $('#placePicker').collapse('hide');
+
+  currentDataIdx.place = placeI
+  index.$data.currentPlace = index.$data.places[placeI]
+
   plotData();
 }
 

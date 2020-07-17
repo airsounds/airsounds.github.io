@@ -21,15 +21,38 @@ var (
 	source = flag.String("source", "", "Which source to update")
 )
 
-var locations = map[string]struct {
-	lat, long float32
-	alt       float32
-}{
-	"megido": {
-		lat:  32.6,
-		long: 35.23,
-		alt:  200,
+type Location struct {
+	Name string  `json:"name"`
+	Lat  float32 `json:"lat"`
+	Long float32 `json:"long"`
+	Alt  int     `json:"alt"`
+}
+
+var locations = []Location{
+	{
+		Name: "megido",
+		Lat:  32.597662,
+		Long: 35.234076,
+		Alt:  200,
 	},
+	{
+		Name: "sde-teiman",
+		Lat:  31.287646,
+		Long: 34.722855,
+		Alt:  656,
+	},
+	{
+		Name: "zefat",
+		Lat:  32.965719,
+		Long: 35.497225,
+		Alt:  2559,
+	},
+	// {
+	//  Name: "rosh-pina",
+	// 	Lat:  32.968102,
+	// 	Long: 35.538361,
+	// 	Alt:  1230,
+	// },
 }
 
 var index struct {
@@ -38,6 +61,7 @@ var index struct {
 
 	IMSStart, IMSEnd time.Time
 	IMSLastUpdate    time.Time
+	Locations        []Location
 }
 
 const (
@@ -60,6 +84,7 @@ func main() {
 	var modified []string
 
 	mustDecodeJson(indexPath, &index)
+	index.Locations = locations
 
 	if *source == "noaa" || *source == "" {
 		modified = append(modified, runNOAA()...)
@@ -74,14 +99,14 @@ func main() {
 }
 
 func runNOAA() (paths []string) {
-	for location, info := range locations {
-		ns, err := noaa.Get(startOfDay, startOfDay.Add(noaaForecast), info.lat, info.long)
+	for _, loc := range locations {
+		ns, err := noaa.Get(startOfDay, startOfDay.Add(noaaForecast), loc.Lat, loc.Long)
 		if err != nil {
-			log.Fatalf("Fetching NOAA for %s: %s", location, err)
+			log.Fatalf("Fetching NOAA for %s: %s", loc.Name, err)
 		}
 		for _, n := range ns {
 			datePath := n.Time.Format("2006/01/02/15")
-			path := filepath.Join(dataDir, datePath, fmt.Sprintf("noaa-%s.json", location))
+			path := filepath.Join(dataDir, datePath, fmt.Sprintf("noaa-%s.json", loc.Name))
 			mustEncodeJson(path, n)
 			paths = append(paths, path)
 
@@ -96,12 +121,16 @@ func runNOAA() (paths []string) {
 }
 
 func runIMS() (paths []string) {
+	var locationNames = map[string]bool{}
+	for _, l := range locations {
+		locationNames[l.Name] = true
+	}
 	imss, err := ims.Predict()
 	if err != nil {
 		log.Fatalf("Fetching IMS: %s", err)
 	}
 	for _, i := range imss {
-		if _, ok := locations[string(i.Name)]; !ok {
+		if _, ok := locationNames[string(i.Name)]; !ok {
 			log.Printf("Skipping location: %s", i.Name)
 			continue
 		}

@@ -13,8 +13,9 @@ import (
 const forecastPath = "https://ims.data.gov.il/sites/default/files/IMS_001.xml"
 
 const (
-	LocationMegido Location = "megido"
-	LocationZefat  Location = "zefat"
+	LocationMegido    Location = "megido"
+	LocationZefat     Location = "zefat"
+	LocationSdeTeiman Location = "sde-teiman"
 )
 
 type ForecastTime struct {
@@ -43,6 +44,8 @@ func (c *Location) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 		*c = LocationMegido
 	case "ZEFAT HAR KENAAN":
 		*c = LocationZefat
+	case "BEER SHEVA":
+		*c = LocationSdeTeiman
 	default:
 		*c = Location(strings.ReplaceAll(strings.ToLower(v), " ", "-"))
 	}
