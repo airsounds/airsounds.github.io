@@ -78,7 +78,7 @@ function createDays(place, maxTime) {
   // Iterate over time slots. Start from today's morning.
   var t = new Date();
   t.setHours(0);
-  
+
   var dayI = 0
   while (true) {  
     var day = {
@@ -482,6 +482,11 @@ function plotData() {
       [X[0], h0],
     ],
     "#D2691E", 1.5)
+
+  // Draw temperature graphs.
+  drawLine(temp, alt, "red", 2.5, 1500);
+  drawLine(dew, alt, "blue", 2.5, 1500);
+
   drawText(X[0], h0, `Alt ${h0} ft`, "top")
   // Max temperature diagonals.
   drawPolygon(
@@ -519,9 +524,6 @@ function plotData() {
   )
   drawText(X[1], TI[1], "TI: " + TI[1].toFixed(0) + "ft", "left")
   drawText(X[1], TIM3[1], "TI-3: " + TIM3[1].toFixed(0) + "ft", "left")
-  // Draw temperature graphs.
-  drawLine(temp, alt, "red", 2.5, 1500);
-  drawLine(dew, alt, "blue", 2.5, 1500);
 
   // Draw cloud base.
   if (cloudBase != null) {
