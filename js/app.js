@@ -150,6 +150,7 @@ async function fetchTime(hour) {
   }
   hour.badge = "badge badge-success";
   console.log(`Successful: ${hour.place.name} at ${hour.day.text} ${hour.text}:00`);
+  index.$forceUpdate() // update the time badge in the UI.
 }
 
 function y(x, x0, y0) {
