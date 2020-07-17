@@ -50,75 +50,93 @@ async function main() {
     return;
   }
   idx = await idexResp.json()
-  index.$data.days = await fetchData(new Date(idx.NoaaEnd));
+
+  index.$data.days = timeLine(new Date(idx.NoaaEnd))
   index.$data.places = [
     {text: place},
   ]
 
-  // Update the plot with the most recent data.
+  // Update the plot with the most recent data first.
+  console.log("fetching immediate data...")
   hoursIndex = importantHours.filter(h => h <= new Date().getHours()).length-1;
+  await fetchTime(index.$data.days[0], index.$data.days[0].hours[hoursIndex])
   update(0, hoursIndex)
+
+  // Fetch all other data in background.
+  console.log("fetching all data in background...")
+  await fetchData(index.$data.days);
 }
 
-async function fetchData(maxTime) {
+function timeLine(maxTime) {
   var days = []
   var t = currentDate
-  var dayi = 0
+  var dayI = 0
   while (true) {  
     var day = {
       text: dateFormat(t),
       hours: [],
     }
-    for (i in importantHours) {
-      hour = importantHours[i]
+    for (hourI in importantHours) {
+      hour = importantHours[hourI]
       t.setHours(hour)
       if (t > maxTime) {
         return days
       }
-      data = await fetchTime(day, hour);
-      badge = "badge badge-success";
-      if (data == undefined) {
-        badge = "badge badge-danger";
-      }
       day.hours.push({
+        hour: hour,
         text: pad(hour),
-        call: 'update(' + dayi + ', ' + i + ')',
-        data: data,
-        badge: badge,
+        call: 'update(' + dayI + ', ' + hourI + ')',
+        data: null,
+        badge: null,
       })
     }
     t.setHours(0)
     t.setDate(t.getDate() + 1);
     days.push(day)
-    dayi++;
+    dayI++;
+  }
+}
+
+async function fetchData(timeline) {
+  for (dayI in timeline) {
+    day = timeline[dayI]
+    for (hourI in day.hours) {
+      hour = day.hours[hourI]
+      await fetchTime(day, hour);
+    }
   }
 }
 
 async function fetchTime(day, hour) {
-  var datePath = "/data/" + day.text.replace('-', '/').replace('-', '/') + '/' + pad(hour) + "/";
-  console.log("fetching data for ", day, hour)
+
+  hour.badge = "badge badge-danger";
+  hour.data = null
+
+  var datePath = "/data/" + day.text.replace('-', '/').replace('-', '/') + '/' + hour.text + "/";
+  console.log("fetching data for ", day.text, hour.text)
   const noaaResp = await fetch(datePath + `noaa-${place}.json`)
   const imsResp = await fetch(datePath + `ims-${place}.json`)
 
   var errors = 0
 
   if (!noaaResp.ok) {
-    console.warn(`NOAA data for ${day.text}, ${hour}:00 is not available (${noaaResp.status})`)
+    console.warn(`NOAA data for ${day.text}, ${hour.text}:00 is not available (${noaaResp.status})`)
     errors++
   }
   if (!imsResp.ok) {
-    console.warn(`IMS data for ${day.text}, ${hour}:00 is not available (${imsResp.status})`)
+    console.warn(`IMS data for ${day.text}, ${hour.hour}:00 is not available (${imsResp.status})`)
     errors++
   }
 
   if (errors > 0) {
-    return null;
+    return;
   }
 
-  return {
+  hour.data = {
     noaa: await noaaResp.json(),
     ims: await imsResp.json(),
   }
+  hour.badge = "badge badge-success"
 }
 
 function y(x, x0, y0) {
