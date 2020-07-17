@@ -1,0 +1,14 @@
+on:
+  schedule:
+    - cron: '0 * * * *' # Every hour
+  repository_dispatch:
+jobs:
+  noaa:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v2
+    - name: Update NOAA data
+      uses: ./
+      with:
+        source: noaa

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en" style="height: 100%;">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="shortcut icon" href="/images/logo.png" />
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+  <link rel="stylesheet" href="/css/app.css">
+  <title>AirSounds</title>
+  <!-- https://vuejs.org -->
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <!-- https://d3js.org/ -->
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+</head>
+<body style="height: 90%;">
+
+<nav id="header" class="navbar navbar-expand-sm navbar-light bg-light">
+  <a class="navbar-brand mr-auto">
+    <img src="/images/logo.png" width="30" height="30" class="d-inline-block align-top">
+    <span class="logo logo-buttons">AirSounds</span>
+  </a>
+  <div class="navbar-nav mr-auto">
+    <a class="nav-link dropdown-toggle" href="#" id="placesDropdown" role="button" data-target="#placePicker" data-toggle="collapse" aria-controls="placePicker" aria-expanded="false">
+      {{ place }}
+    </a>
+  </div>
+  <div class="navbar-nav mr-auto">
+    <a class="nav-link dropdown-toggle" href="#" id="datesDropdown" role="button" data-target="#datesPicker" data-toggle="collapse" aria-controls="datesPicker" aria-expanded="false">
+      {{day}} {{hour}}
+    </a>
+  </div>
+  <ul class="navbar-nav">
+    <li class="nav-item">
+      <a class="nav-link" href="https://github.com/airsounds/airsounds.github.io">
+        <svg version="1.1" width="16" height="16" viewBox="0 0 16 16" class="octicon octicon-mark-github" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path></svg>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+<div id="index" class="overlay">
+  <div class="collapse" id="datesPicker">
+    <div class="p-4">
+    <ul class="list-group">
+      <li v-for="day in days" class="list-group-item d-flex justify-content-between align-items-center">
+        {{ day.text }}
+        <a v-for="hour in day.hours" href="#" :onclick="hour.call">
+          <span :class="hour.badge"> 
+            {{ hour.text }}
+          </span>
+        </a>
+      </li>
+    </ul>
+    </div>
+  </div>
+
+  <div class="collapse" id="placePicker">
+    <div class="p-4">
+    <ul class="list-group">
+      <li v-for="place in places" class="list-group-item d-flex justify-content-between align-items-center">
+        <a href="#" :onclick="place.call">
+            {{ place.text }}
+        </a>
+      </li>
+    </ul>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex align-items-center flex-column justify-content-center" style="height: 100%;">
+  <svg id="graph" ></svg>
+</div>
+
+<div>
+<div id="errors" v-for="error in errors" class="alert alert-danger">
+  <a href="#" class="close" data-dismiss="alert">&times;</a>
+  <strong>{{ error.title }}</strong>
+  {{ error.text }}
+</div>
+</div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+    <script src="/js/app.js"></script>
+
+</body>
+</html>
