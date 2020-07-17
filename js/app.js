@@ -382,18 +382,19 @@ function plotData(data) {
   }
 
   function drawArrow(from, to, color) {
+    size = 14;
     svg
       .append('defs')
       .append('marker')
       .attr('id', 'arrow')
-      .attr('viewBox', [0, 0, 20, 20])
-      .attr('refX', 10)
-      .attr('refY', 10)
-      .attr('markerWidth', 10)
-      .attr('markerHeight', 10)
+      .attr('viewBox', [0, 0, size, size])
+      .attr('refX', size/2)
+      .attr('refY', size/2)
+      .attr('markerWidth', size/2)
+      .attr('markerHeight', size/2)
       .attr('orient', 'auto-start-reverse')
       .append('path')
-      .attr('d', d3.line()([[0, 0], [0, 20], [20, 10]]))
+      .attr('d', d3.line()([[0, 0], [0, size], [size, size/2]]))
       .attr('stroke', color)
       .attr('fill', color);
     svg
