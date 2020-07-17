@@ -29,6 +29,7 @@ const altTrigger = 4000.0
 
 const X = [0, 50]
 const Y = [0, 6000]
+const margin = ({top: 20, right: 30, bottom: 30, left: 40})
 const hours = [0, 3, 6, 9, 12, 15, 18, 21]
 const importantHours = [6, 9, 12, 15, 18]
 
@@ -64,7 +65,7 @@ async function main() {
   // Update the plot with the most recent data first.
   console.log("fetching immediate data...")
   hoursIndex = importantHours.filter(h => h <= new Date().getHours()).length-1;
-  await fetchTime(index.$data.places[0].days[0].hours[hoursIndex])
+  await fetchData(index.$data.places[0].days[0].hours[hoursIndex])
   updateTime(0, hoursIndex)
 
   // Fetch all other data in background.
@@ -115,13 +116,20 @@ async function fetchAllData() {
       day = place.days[dayI]
       for (hourI in day.hours) {
         hour = day.hours[hourI]
-        await fetchTime(hour);
+        await fetchData(hour);
+      }
+      day.data = {
+        TIMax: Math.max(day.hours.map(hour => hour.data.TI)),
+        TIM3Max: Math.max(day.hours.map(hour => hour.data.TIM3)),
+        isTriggered: day.hours.map(hour => hour.data.isTriggered).reduce((a, b) => a || b),
+        cloudBaseMin: Math.min(day.hours.map(hour => hour.data.cloudBase)),
+        cloudBaseMax: Math.max(day.hours.map(hour => hour.data.cloudBase)),
       }
     }
   }
 }
 
-async function fetchTime(hour) {
+async function fetchData(hour) {
   console.log(`Fetching ${hour.place.name} at ${hour.day.text} ${hour.text}:00`);
   hour.badge = "badge badge-danger";
   
@@ -151,6 +159,47 @@ async function fetchTime(hour) {
   hour.badge = "badge badge-success";
   console.log(`Successful: ${hour.place.name} at ${hour.day.text} ${hour.text}:00`);
   index.$forceUpdate() // update the time badge in the UI.
+
+  calcData(hour)
+}
+
+function calcData(hour) {
+  data = hour.data;
+  data.alt = data.noaa['Height'].filter(v => v <= Y[1]*2);
+  data.temp = data.noaa['Temp'];
+  data.dew = data.noaa['Dew'];
+  data.t0 = data.ims['Temp'];
+  data.h0 = hour.place.alt; // Ground altitude.
+
+  // Thermal index calculations.
+  var TI = intersect(data.temp, data.alt, data.t0, data.h0, M);
+  if (TI != null) {
+    data.TI = TI[1];
+  } else {
+    data.TI = data.h0;
+  }
+  var TIM3 = intersect(data.temp, data.alt, data.t0-3, data.h0, M);
+  if (TIM3 != null) {
+    data.TIM3 = TIM3[1];
+  } else {
+    data.TIM3 = data.h0;
+  }
+
+  // Cloud base calculation.
+  var dewH0 = intersect(data.alt, data.dew, data.h0, 0, 1);
+  if (dewH0 != null) {
+    data.cloudBase = 1000.0 / 2.5 * (data.t0 - dewH0[1]) + data.h0
+    if (data.cloudBase < 0) {
+      data.cloudBase = null;
+    }
+  }
+
+  // Calculate the trigger temperature.
+  var altTriggerT = intersect(data.alt, data.temp, altTrigger, 0, 1);
+  if (altTriggerT != null) {
+    data.trig = x(data.h0, altTriggerT[1], altTrigger)
+    data.isTriggered = data.trig <= data.t0
+  }
 }
 
 function y(x, x0, y0) {
@@ -260,49 +309,10 @@ function plotData() {
   header.$data.day = hour.day.text
   header.$data.hour = hour.text
   header.$data.place = hour.place.name
-
-  if (hour.data == undefined) {
-    error("No data", "for chosen date");
-    return;
-  }
   
-  data = hour.data;
   width = currentPlotSize.w;
   height = currentPlotSize.h;
-
-  let alt = data.noaa['Height'].filter(v => v <= Y[1]*2);
-  let temp = data.noaa['Temp'];
-  let dew = data.noaa['Dew'];
-  let t0 = data.ims['Temp'];
-  let h0 = hour.place.alt; // Ground altitude.
-
-  // Thermal index calculations.
-  TI = intersect(temp, alt, t0, h0, M)
-  if (TI == null) {
-    TI = [0, h0]
-  }
-  TIM3 = intersect(temp, alt, t0-3, h0, M)
-  if (TIM3 == null) {
-    TIM3 = [0, h0]
-  }
-
-  // Cloud base calculation.
-  cloudBase = null;
-  dewH0 = intersect(alt, dew, h0, 0, 1)
-  if (dewH0 != null) {
-    cloudBase = 1000.0 / 2.5 * (t0 - dewH0[1]) + h0
-    if (cloudBase < 0) {
-      cloudBase = null;
-    }
-  }
-
-  // Calculate the trigger temperature.
-  altTriggerT = intersect(alt, temp, altTrigger, 0, 1)
-  if (altTriggerT != null) {
-    trig = x(h0, altTriggerT[1], altTrigger)
-  }
   
-  margin = ({top: 20, right: 30, bottom: 30, left: 40})
   var svg = d3
     .select("#graph")
     .attr("width", width)
@@ -310,6 +320,13 @@ function plotData() {
   
   // Clear content before plotting.
   svg.selectAll('*').remove()
+
+  data = hour.data;
+  if (jQuery.isEmptyObject(data)) {
+    error("No data", "for chosen date");
+    return;
+  }
+
   xScale = d3.scaleLinear()
     .domain(X)
     .nice()
@@ -320,9 +337,9 @@ function plotData() {
     .range([height-margin.bottom, margin.top]);
 
   function drawLine(x, y, color, width, duration, dashed) {
-    data = []
-    for (i in alt) {
-      data.push(({x: xScale(x[i]), y: yScale(y[i])}))
+    points = []
+    for (i in data.alt) {
+      points.push(({x: xScale(x[i]), y: yScale(y[i])}))
     }
     
     line = d3.line()
@@ -333,13 +350,13 @@ function plotData() {
       return d3.create("svg:path").attr("d", path).node().getTotalLength();
     }
     
-    const l = length(line(data));
+    const l = length(line(points));
     dash = `${l},${l}`;
     if (dashed) {
       dash = "10";
     }
     svg.append("path")
-      .datum(data)
+      .datum(points)
       .attr("fill", "none")
       .attr("stroke", color)
       .attr("stroke-width", width)
@@ -352,26 +369,27 @@ function plotData() {
         .ease(d3.easeLinear)
         .attr("stroke-dasharray", dash);
   }
+  
   function drawPoint(x, y, color) {
-    data = [{x: xScale(x), y: yScale(y)}]
+    point = [{x: xScale(x), y: yScale(y)}]
     svg.append("g")
       .attr("fill", "white")
       .attr("stroke", color)
       .attr("stroke-width", 2)
       .selectAll("circle")
-      .data(data)
+      .data(point)
       .join("circle")
       .attr("cx", d => d.x)
       .attr("cy", d => d.y)
       .attr("r", 3);
   }
   function drawText(x, y, text, orient) {
-    data = [{x: xScale(x), y: yScale(y)}]
+    point = [{x: xScale(x), y: yScale(y)}]
     const label = svg.append("g")
       .attr("font-family", "sans-serif")
       .attr("font-size", 13)
       .selectAll("g")
-      .data(data)
+      .data(point)
       .join("g")
       .attr("transform", d => `translate(${d.x},${d.y})`)
       .attr("opacity", 1);
@@ -389,12 +407,12 @@ function plotData() {
       .call(halo);
   }
   function drawPolygon(points, color, width) {
-    data = []
+    d = []
     for (i in points) {
-      data.push([xScale(points[i][0]), yScale(points[i][1])])
+      d.push([xScale(points[i][0]), yScale(points[i][1])])
     }
     svg.append("polygon")
-      .datum(data)
+      .datum(d)
       .attr("points", pts => pts.map(p => p.join(",")).join(" "))
       .attr("fill", color)
       .attr('opacity', 0.2)
@@ -479,62 +497,62 @@ function plotData() {
     [
       [X[0], Y[0]],
       [X[1], Y[0]],
-      [X[1], h0],
-      [X[0], h0],
+      [X[1], data.h0],
+      [X[0], data.h0],
     ],
     "#D2691E", 1.5)
 
   // Draw temperature graphs.
-  drawLine(temp, alt, "red", 2.5, 1500);
-  drawLine(dew, alt, "blue", 2.5, 1500);
+  drawLine(data.temp, data.alt, "red", 2.5, 1500);
+  drawLine(data.dew, data.alt, "blue", 2.5, 1500);
 
-  drawText(X[0], h0, `Alt ${h0} ft`, "top")
+  drawText(X[0], data.h0, `Alt ${data.h0} ft`, "top")
   // Max temperature diagonals.
   drawPolygon(
     [
-      [t0, h0],
-      [t0-3, h0],
-      [X[0], y(X[0], t0-3, h0)],
-      [X[0], y(X[0], t0, h0)],
+      [data.t0, data.h0],
+      [data.t0-3, data.h0],
+      [X[0], y(X[0], data.t0-3, data.h0)],
+      [X[0], y(X[0], data.t0, data.h0)],
       
     ],
     "red", 0
   )
-  drawLine([X[0], t0], [y(X[0], t0, h0), h0], "red", 1, 100)
-  drawPoint(t0, h0, "red")
-  drawText(t0, h0, "Tmax: "+ t0 + "C", "top")
+  drawLine([X[0], data.t0], [y(X[0], data.t0, data.h0), data.h0], "red", 1, 100)
+  drawPoint(data.t0, data.h0, "red")
+  drawText(data.t0, data.h0, "Tmax: "+ data.t0 + "C", "top")
 
-  if (trig != null) {
-    color = 'green';
-    if (trig > t0) {
+  if (data.trig != null) {
+    var color = 'green';
+    if (!data.isTriggered) {
       color = 'red';
     }
-    drawArrow([t0, h0], [trig, h0], color)
-    drawText(trig, h0, "Trigger: "+ trig.toFixed(1) + "C", "bottom")
+    drawArrow([data.t0, data.h0], [data.trig, data.h0], color)
+    drawText(data.trig, data.h0, "Trigger: "+ data.trig.toFixed(1) + "C", "bottom")
   }
 
   // Thermal indices.
   drawPolygon(
     [
-      [X[0], TI[1]],
-      [X[1], TI[1]],
-      [X[1], TIM3[1]],
-      [X[0], TIM3[1]]
+      [X[0], data.TI],
+      [X[1], data.TI],
+      [X[1], data.TIM3],
+      [X[0], data.TIM3]
     ],
     "blue", 0
   )
-  drawText(X[1], TI[1], "TI: " + TI[1].toFixed(0) + "ft", "left")
-  drawText(X[1], TIM3[1], "TI-3: " + TIM3[1].toFixed(0) + "ft", "left")
+  drawText(X[1], data.TI, "TI: " + data.TI.toFixed(0) + "ft", "left")
+  drawText(X[1], data.TIM3, "TI-3: " + data.TIM3.toFixed(0) + "ft", "left")
 
   // Draw cloud base.
-  if (cloudBase != null) {
-    cloudBaseY = Math.min(cloudBase, Y[1]);
-    if (cloudBase <= Y[1]) {
+  if (data.cloudBase != null) {
+    var cloudBaseY = Math.min(data.cloudBase, Y[1]);
+    if (data.cloudBase <= Y[1]) {
       drawLine(
         X, [cloudBaseY, cloudBaseY],
         "blue", 1, 500, true)
     }
-    drawText(X[1], cloudBaseY, "Cloud base: " + cloudBase.toFixed(0) + "ft", "left")
+    drawText(X[1], cloudBaseY, "Cloud base: " + data.cloudBase.toFixed(0) + "ft", "left")
   }
 
   function halo(text) {

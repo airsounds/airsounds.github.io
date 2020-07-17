@@ -46,7 +46,7 @@
         {{ day.text }}
         <a v-for="hour in day.hours" href="#" :onclick="hour.call">
           <span :class="hour.badge"> 
-            {{ hour.text }}
+            {{ hour.text }}:00
           </span>
         </a>
       </li>
