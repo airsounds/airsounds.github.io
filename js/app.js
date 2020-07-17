@@ -26,6 +26,7 @@ var currentPlotSize = calcPlotSize();
 const place = "megido";
 
 const M = -1000.0 / 3.0
+const altTrigger = 4000.0
 
 const X = [0, 50]
 const Y = [0, 6000]
@@ -140,7 +141,11 @@ async function fetchTime(day, hour) {
 }
 
 function y(x, x0, y0) {
-  return M * (x - x0) + y0
+  return (x - x0) * M + y0
+}
+
+function x(y, x0, y0) {
+  return (y - y0) / M + x0
 }
 
 var header = new Vue({
@@ -209,26 +214,30 @@ function intersect(x, y, x0, y0, m0) {
   // Find where diff vector changes from positive to negative value.
   var i = 0
   while (true) {
-    if (diff[i] < 0) {
+    if (diff[i] < 0 || i >= diff.length) {
       break;
     }
     i++;
   }
 
   // No intersection.
-  if (i < 1) {
+  if (i < 1 || i >= diff.length) {
     return null;
   }
 
   // Find where a line between p1 and p2 crosses the y=0 line.
   p1 = [x[i-1], diff[i-1]]
   p2 = [x[i], diff[i]]
-  m = (p2[1] - p1[1]) / (p2[0] - p1[0])
-  xi = p1[0] - p1[1] / m
+  xi = interpolate(p1, p2, 0)
   
   // Calculate the linear line value in the intersection location.
   yi = y0 + m0 * (xi - x0)
   return [xi, yi]
+}
+
+function interpolate(p1, p2, y) {
+  m = (p2[1] - p1[1]) / (p2[0] - p1[0])
+  return p1[0] - (p1[1] - y) / m
 }
 
 function plotData(data) {
@@ -260,6 +269,14 @@ function plotData(data) {
     if (cloudBase < 0) {
       cloudBase = null;
     }
+  }
+
+  // Calculate the trigger temperature.
+  altTriggerT = intersect(alt, temp, altTrigger, 0, 1)
+  console.log("alt trigger t: ", altTriggerT)
+  if (altTriggerT != null) {
+    trig = x(h0, altTriggerT[1], altTrigger)
+    console.log("trig: ", trig)
   }
   
   margin = ({top: 20, right: 30, bottom: 30, left: 40})
@@ -363,6 +380,33 @@ function plotData(data) {
       .attr("stroke-linejoin", "round")
       .attr("stroke-linecap", "round")
   }
+
+  function drawArrow(from, to, color) {
+    svg
+      .append('defs')
+      .append('marker')
+      .attr('id', 'arrow')
+      .attr('viewBox', [0, 0, 20, 20])
+      .attr('refX', 10)
+      .attr('refY', 10)
+      .attr('markerWidth', 10)
+      .attr('markerHeight', 10)
+      .attr('orient', 'auto-start-reverse')
+      .append('path')
+      .attr('d', d3.line()([[0, 0], [0, 20], [20, 10]]))
+      .attr('stroke', color)
+      .attr('fill', color);
+    svg
+      .append('path')
+      .attr('d', d3.line()([
+        [xScale(from[0]), yScale(from[1])],
+        [xScale(to[0]), yScale(to[1])],
+      ]))
+      .attr('stroke', color)
+      .attr('marker-end', 'url(#arrow)')
+      .attr('fill', 'none');
+  }
+
   // Draw axes.
   xAxis = g => g
     .attr("transform", `translate(0,${height - margin.bottom})`)
@@ -429,7 +473,16 @@ function plotData(data) {
   )
   drawLine([X[0], t0], [y(X[0], t0, h0), h0], "red", 1, 100)
   drawPoint(t0, h0, "red")
-  drawText(t0, h0, "Tmax "+ t0 + "C", "right")
+  drawText(t0, h0, "Tmax: "+ t0 + "C", "top")
+
+  if (trig != null) {
+    color = 'green';
+    if (trig > t0) {
+      color = 'red';
+    }
+    drawArrow([t0, h0], [trig, h0], color)
+    drawText(trig, h0, "Trigger: "+ trig.toFixed(1) + "C", "bottom")
+  }
 
   // Thermal indices.
   drawPolygon(
@@ -468,6 +521,10 @@ function plotData(data) {
 }
 
 async function update(dayi, houri) {
+  // Hide menus.
+  $('#datesPicker').collapse('hide');
+  $('#placePicker').collapse('hide');
+
   day = index.$data.days[dayi]
   hour = day.hours[houri]
 
