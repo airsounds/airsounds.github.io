@@ -118,13 +118,19 @@ async function fetchAllData() {
         hour = day.hours[hourI]
         await fetchData(hour);
       }
+
+      let defined = x => x != undefined;
+      let max = (a,b) => (a > b) ? a : b;
+      let min = (a,b) => (a < b) ? a : b
+
       day.data = {
-        TIMax: Math.max(day.hours.map(hour => hour.data.TI)),
-        TIM3Max: Math.max(day.hours.map(hour => hour.data.TIM3)),
+        TIMax: index.$data.places[0].days[0].hours.map(h => h.data.TI).filter(defined).reduce(max).toFixed(0),
+        TIM3Max: index.$data.places[0].days[0].hours.map(h => h.data.TIM3).filter(defined).reduce(max).toFixed(0),
         isTriggered: day.hours.map(hour => hour.data.isTriggered).reduce((a, b) => a || b),
-        cloudBaseMin: Math.min(day.hours.map(hour => hour.data.cloudBase)),
-        cloudBaseMax: Math.max(day.hours.map(hour => hour.data.cloudBase)),
+        cloudBaseMin: day.hours.map(hour => hour.data.cloudBase).filter(defined).reduce(min).toFixed(0),
+        cloudBaseMax: day.hours.map(hour => hour.data.cloudBase).filter(defined).reduce(max).toFixed(0),
       }
+      index.$forceUpdate() // Update the UI to reflect the aggregation metrics.
     }
   }
 }
@@ -158,9 +164,10 @@ async function fetchData(hour) {
   }
   hour.badge = "badge badge-success";
   console.log(`Successful: ${hour.place.name} at ${hour.day.text} ${hour.text}:00`);
-  index.$forceUpdate() // update the time badge in the UI.
-
+  
   calcData(hour)
+
+  index.$forceUpdate() // Update the time badge in the UI.
 }
 
 function calcData(hour) {
