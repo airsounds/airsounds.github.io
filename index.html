@@ -60,13 +60,21 @@
         </div>
         <div class="row">
           <div class="col-md-2 col-4">
-            <button v-if="day.data.isTriggered" class="btn"><i class="fas fa-burn"></i> <small>Triggered!</small></button>
+            <button v-if="day.data.isTriggered" class="btn">
+              <i class="fas fa-burn"></i>
+              <small>Triggered!</small>
+            </button>
           </div>
           <div class="col-md-2 col-4">
-            <button class="btn"><i class="fas fa-angle-double-up"></i> <small>{{day.data.TIM3Max}}~{{day.data.TIMax}}ft</small></button>
+            <button class="btn">
+              <i class="fas fa-angle-double-up"></i>
+              <small>{{day.data.TIM3Max}}~{{day.data.TIMax}}ft</small>
+            </button>
           </div>
           <div class="col-md-2 col-4">
-            <button class="btn"><i class="fas fa-cloud"></i> <small>{{day.data.cloudBaseMin}}~{{day.data.cloudBaseMax}}ft</small></span></button>
+            <button class="btn"><i class="fas fa-cloud"></i>
+              <small>{{day.data.cloudBaseMin}}~{{day.data.cloudBaseMax}}ft</small>
+            </button>
           </div>
         </div>
       </div>
@@ -78,16 +86,25 @@
       <div v-for="place in places" href="#" class="list-group-item list-group-item-action flex-column align-items-start container" :onclick="place.call">
         <div class="row">
           <div class="col-md-3 col-12">
-              <h5>{{ place.name }}</h5>
+              <h5>{{ place.text }}</h5>
           </div>
           <div class="col-md-2 col-4">
-            <button v-if="place.days[0].data.isTriggered" class="btn"><i class="fas fa-burn"></i> <small>Triggered!</small></button>
+            <button v-if="place.days[0].data.isTriggered" class="btn">
+              <i class="fas fa-burn"></i>
+              <small>Triggered!</small>
+            </button>
           </div>
           <div class="col-md-2 col-4">
-            <button class="btn"><i class="fas fa-angle-double-up"></i> <small>{{place.days[0].data.TIM3Max}}~{{place.days[0].data.TIMax}}ft</small></button>
+            <button class="btn">
+              <i class="fas fa-angle-double-up"></i>
+              <small>{{place.days[0].data.TIM3Max}}~{{place.days[0].data.TIMax}}ft</small>
+            </button>
           </div>
           <div class="col-md-2 col-4">
-            <button class="btn"><i class="fas fa-cloud"></i> <small>{{place.days[0].data.cloudBaseMin}}~{{place.days[0].data.cloudBaseMax}}ft</small></span></button>
+            <button class="btn">
+              <i class="fas fa-cloud"></i>
+              <small>{{place.days[0].data.cloudBaseMin}}~{{place.days[0].data.cloudBaseMax}}ft</small>
+            </button>
           </div>
         </div>
       </div>

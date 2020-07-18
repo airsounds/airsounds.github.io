@@ -3,6 +3,10 @@ Date.prototype.addHours= function(h){
   return this;
 }
 
+Map.prototype.getOrElse = function(key, value) {
+  return this.has(key) ? this.get(key) : value
+}
+
 var currentTime = new Date();
 // Truncate time to 3h.
 currentTime.setHours(Math.round(currentTime.getHours() / 3) * 3)
@@ -36,6 +40,12 @@ const importantHours = [6, 9, 12, 15, 18]
 const xTicks = 10;
 const yTicks = 15;
 
+const placeNameTranslate = new Map([
+  ["megido", "מגידו"],
+  ["sde-teiman", "שדה תימן"],
+  ["zefat", "צפת"],
+])
+
 async function main() {
   // Resize plot when window is being resized.
   d3.select(window).on('resize.updatesvg', function() {
@@ -58,8 +68,10 @@ async function main() {
   index.$data.currentPlace = idx.Locations[0]
   
   for (i in index.$data.places) {
-    createDays(index.$data.places[i], new Date(idx.NoaaEnd))
-    index.$data.places[i].call = `updatePlace(${i})`;
+    place = index.$data.places[i]
+    createDays(place, new Date(idx.NoaaEnd))
+    place.call = `updatePlace(${i})`;
+    place.text = placeNameTranslate.getOrElse(place.name, place.name);
   }
 
   // Update the plot with the most recent data first.
@@ -315,7 +327,7 @@ function plotData() {
   // Update headers.
   header.$data.day = hour.day.text
   header.$data.hour = hour.text
-  header.$data.place = hour.place.name
+  header.$data.place = hour.place.text
   
   width = currentPlotSize.w;
   height = currentPlotSize.h;
