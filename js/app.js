@@ -98,6 +98,7 @@ function createDays(place, maxTime) {
       text: dateFormat(t),
       hours: [],
       place: place,
+      data: {},
     }
     for (hourI in importantHours) {
       hour = importantHours[hourI]
