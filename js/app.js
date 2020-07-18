@@ -33,7 +33,7 @@ const altTrigger = 4000.0
 
 const X = [0, 50]
 const Y = [0, 6000]
-const margin = ({top: 20, right: 30, bottom: 30, left: 40})
+const margin = ({top: 30, right: 30, bottom: 40, left: 40})
 const hours = [0, 3, 6, 9, 12, 15, 18, 21]
 const importantHours = [6, 9, 12, 15, 18]
 
@@ -131,10 +131,6 @@ async function fetchAllData() {
         await fetchData(hour);
       }
 
-      let defined = x => x != undefined;
-      let max = (a,b) => (a > b) ? a : b;
-      let min = (a,b) => (a < b) ? a : b
-
       day.data = {
         TIMax: day.hours.map(h => h.data.TI).filter(defined).reduce(max).toFixed(0),
         TIM3Max: day.hours.map(h => h.data.TIM3).filter(defined).reduce(max).toFixed(0),
@@ -184,21 +180,27 @@ async function fetchData(hour) {
 
 function calcData(hour) {
   data = hour.data;
-  data.alt = data.noaa['Height'].filter(v => v <= Y[1]*2);
-  data.temp = data.noaa['Temp'];
-  data.dew = data.noaa['Dew'];
+
+  var n = data.noaa['Height'].findIndex(v => v > Y[1])+1;
+
+  data.alt = data.noaa['Height'].slice(0, n);
+  data.temp = data.noaa['Temp'].slice(0, n);
+  data.dew = data.noaa['Dew'].slice(0, n);
   data.t0 = data.ims['Temp'];
   data.h0 = hour.place.alt; // Ground altitude.
 
+  data.windDir = data.noaa['WindDir'].slice(0, n);
+  data.windSpeed = data.noaa['WindSpeed'].slice(0, n);
+
   // Thermal index calculations.
   var TI = intersect(data.temp, data.alt, data.t0, data.h0, M);
-  if (TI != null) {
+  if (TI != null && TI[1] >= data.h0) {
     data.TI = TI[1];
   } else {
     data.TI = data.h0;
   }
   var TIM3 = intersect(data.temp, data.alt, data.t0-3, data.h0, M);
-  if (TIM3 != null) {
+  if (TIM3 != null && TIM3[1] >= data.h0) {
     data.TIM3 = TIM3[1];
   } else {
     data.TIM3 = data.h0;
@@ -346,6 +348,8 @@ function plotData() {
     return;
   }
 
+  // Scales for axes.
+
   xScale = d3.scaleLinear()
     .domain(X)
     .nice()
@@ -355,38 +359,96 @@ function plotData() {
     .nice()
     .range([height-margin.bottom, margin.top]);
 
-  function drawLine(x, y, color, width, duration, dashed) {
+  // Wind drawing is using the same Y axis, but only 1/3 of the X axis.
+  xScaleWind = d3.scaleLinear()
+    .domain([data.windSpeed.reduce(min), data.windSpeed.reduce(max)])
+    .nice()
+    .range([margin.left, width/3 - margin.right]);
+
+  function initParams(p, defaults) {
+    if (p == undefined) {
+      p = {}
+    }
+    keys = Object.keys(defaults)
+    for (i in keys) {
+      key = keys[i];
+      if (p[key] == undefined) {
+        p[key] = defaults[key];
+      }
+    }
+    return p;
+  }
+
+  function drawLine(x, y, params) {
+    params = initParams(params, {
+      color: "black",
+      width: 1,
+      duration: 0,
+      dashed: false,
+      arrowSize: 0,
+      xScale: xScale,
+      yScale: yScale,
+    })
     points = []
     for (i in data.alt) {
-      points.push(({x: xScale(x[i]), y: yScale(y[i])}))
+      points.push(({x: params.xScale(x[i]), y: params.yScale(y[i])}));
     }
     
     line = d3.line()
       .curve(d3.curveCatmullRom)
       .x(d => d.x)
-      .y(d => d.y)
-     function length(path) {
+      .y(d => d.y);
+    
+    function length(path) {
       return d3.create("svg:path").attr("d", path).node().getTotalLength();
     }
     
     const l = length(line(points));
-    dash = `${l},${l}`;
-    if (dashed) {
-      dash = "10";
+    const dash = (params.dashed) ? "10" : `${l},${l}`;
+
+    if (params.arrowSize > 0) {
+      var size = params.arrowSize;
+      svg
+        .append('defs')
+        .append('marker')
+        .attr('id', 'arrow')
+        .attr('viewBox', [0, 0, size, size])
+        .attr('refX', size/2)
+        .attr('refY', size/2)
+        .attr('markerWidth', size/2)
+        .attr('markerHeight', size/2)
+        .attr('orient', 'auto-start-reverse')
+        .append('path')
+        .attr('d', d3.line()([[0, 0], [0, size], [size, size/2]]))
+        .attr('stroke', color)
+        .attr('fill', color);
+      // svg
+      //   .append('path')
+      //   .attr('d', d3.line()([
+      //     [xScale(from[0]), yScale(from[1])],
+      //     [xScale(to[0]), yScale(to[1])],
+      //   ]))
+      //   .attr('stroke', color)
+      //   .attr('marker-end', 'url(#arrow)')
+      //   .attr('fill', 'none');
     }
-    svg.append("path")
+
+    path = svg.append("path")
       .datum(points)
       .attr("fill", "none")
-      .attr("stroke", color)
-      .attr("stroke-width", width)
+      .attr("stroke", params.color)
+      .attr("stroke-width", params.width)
       .attr("stroke-linejoin", "round")
       .attr("stroke-linecap", "round")
       .attr("stroke-dasharray", `0,${l}`)
       .attr("d", line)
       .transition()
-        .duration(duration)
+        .duration(params.duration)
         .ease(d3.easeLinear)
         .attr("stroke-dasharray", dash);
+    if (params.arrowSize > 0) {
+      path.attr('marker-end', 'url(#arrow)')
+    }
   }
   
   function drawPoint(x, y, color) {
@@ -402,11 +464,20 @@ function plotData() {
       .attr("cy", d => d.y)
       .attr("r", 3);
   }
-  function drawText(x, y, text, orient) {
-    point = [{x: xScale(x), y: yScale(y)}]
+
+  function drawText(x, y, text, params) {
+    params = initParams(params, {
+      xScale: xScale,
+      size: 13,
+      orient: "right",
+      color:"black",
+    })
+
+    point = [{x: params.xScale(x), y: yScale(y)}]
     const label = svg.append("g")
       .attr("font-family", "sans-serif")
-      .attr("font-size", 13)
+      .attr("font-size", params.size)
+      .attr("font-color", params.color)
       .selectAll("g")
       .data(point)
       .join("g")
@@ -416,7 +487,7 @@ function plotData() {
       .text(text)
       .each(function(d) {
         const t = d3.select(this);
-        switch (orient) {
+        switch (params.orient) {
           case "top": t.attr("text-anchor", "middle").attr("dy", "-0.7em"); break;
           case "right": t.attr("dx", "0.5em").attr("dy", "0.32em").attr("text-anchor", "start"); break;
           case "bottom": t.attr("text-anchor", "middle").attr("dy", "1.4em"); break;
@@ -441,75 +512,12 @@ function plotData() {
       .attr("stroke-linecap", "round")
   }
 
-  function drawArrow(from, to, color) {
-    size = 14;
-    svg
-      .append('defs')
-      .append('marker')
-      .attr('id', 'arrow')
-      .attr('viewBox', [0, 0, size, size])
-      .attr('refX', size/2)
-      .attr('refY', size/2)
-      .attr('markerWidth', size/2)
-      .attr('markerHeight', size/2)
-      .attr('orient', 'auto-start-reverse')
-      .append('path')
-      .attr('d', d3.line()([[0, 0], [0, size], [size, size/2]]))
-      .attr('stroke', color)
-      .attr('fill', color);
-    svg
-      .append('path')
-      .attr('d', d3.line()([
-        [xScale(from[0]), yScale(from[1])],
-        [xScale(to[0]), yScale(to[1])],
-      ]))
-      .attr('stroke', color)
-      .attr('marker-end', 'url(#arrow)')
-      .attr('fill', 'none');
-  }
-
-  // Draw axes.
-  xAxis = g => g
-    .attr("transform", `translate(0,${height - margin.bottom})`)
-    .call(d3.axisBottom(xScale).ticks(xTicks))
-    .call(g => g.select(".domain").remove())
-    .call(g => g.selectAll(".tick line").clone()
-        .attr("y2", -height)
-        .attr("stroke-opacity", 0.1))
-    .call(g => g.append("text")
-        .attr("x", width - 4)
-        .attr("y", -4)
-        .attr("font-weight", "bold")
-        .attr("text-anchor", "end")
-        .attr("fill", "black")
-        .text("T[c]")
-        .call(halo))
-  yAxis = g => g
-    .attr("transform", `translate(${margin.left},0)`)
-    .call(d3.axisLeft(yScale).ticks(yTicks, "s"))
-    .call(g => g.select(".domain").remove())
-    .call(g => g.selectAll(".tick line").clone()
-        .attr("x2", width)
-        .attr("stroke-opacity", 0.1))
-    .call(g => g.select(".tick:last-of-type text").clone()
-        .attr("x", 4)
-        .attr("text-anchor", "start")
-        .attr("font-weight", "bold")
-        .attr("fill", "black")
-        .text("H[ft]")
-        .call(halo))
-
-  svg.append("g").call(xAxis);
-  svg.append("g").call(yAxis);
-
   // Draw diagonal ticks.
   for(x0 = X[1]; x0 > X[0]; x0 -= (X[1] - X[0]) / xTicks) {
     drawLine(
       [X[0], x0],
       [y(X[0], x0, Y[0]), Y[0]],
-      '#ebecf0',
-      1,
-      0);
+      {color: '#ebecf0'});
   }
   // Draw ground.
   drawPolygon(
@@ -522,10 +530,22 @@ function plotData() {
     "#D2691E", 1.5)
 
   // Draw temperature graphs.
-  drawLine(data.temp, data.alt, "red", 2.5, 1500);
-  drawLine(data.dew, data.alt, "blue", 2.5, 1500);
+  drawLine(data.temp, data.alt, 
+    {color: "red", width: 2.5, duration: 1500});
+  drawLine(data.dew, data.alt, 
+    {color: "blue", width: 2.5, duration: 1500});
 
-  drawText(X[1], data.h0, `Alt ${data.h0} ft`, "top")
+  // Draw wind
+  drawLine(data.windSpeed, data.alt, 
+    {color: "#444444", duration: 1500, xScale: xScaleWind})
+  for(i in data.windSpeed) {
+    var dir = windDirName(data.windDir[i])
+    drawText(data.windSpeed[i], data.alt[i], data.windSpeed[i] + dir,
+      {size: 10, xScale: xScaleWind})
+  }
+
+  drawText(X[1], data.h0, `Alt ${data.h0} ft`,
+    {orient: "top"})
   // Max temperature diagonals.
   drawPolygon(
     [
@@ -537,17 +557,21 @@ function plotData() {
     ],
     "red", 0
   )
-  drawLine([X[0], data.t0], [y(X[0], data.t0, data.h0), data.h0], "red", 1, 100)
+  drawLine([X[0], data.t0], [y(X[0], data.t0, data.h0), data.h0], 
+    {color: "red"})
   drawPoint(data.t0, data.h0, "red")
-  drawText(data.t0, data.h0, "Tmax: "+ data.t0 + "C", "top")
+  drawText(data.t0, data.h0, "Tmax: "+ data.t0 + "C", 
+    {orient: "top"})
 
   if (data.trig != null) {
     var color = 'green';
     if (!data.isTriggered) {
       color = 'red';
     }
-    drawArrow([data.t0, data.h0], [data.trig, data.h0], color)
-    drawText(data.trig, data.h0, "Trigger: "+ data.trig.toFixed(1) + "C", "bottom")
+    drawLine([data.t0, data.trig], [data.h0, data.h0],
+      {color: color, duration: 2500, arrowSize: 14})
+    drawText(data.trig, data.h0, "Trigger: "+ data.trig.toFixed(1) + "C",
+      {orient: "bottom"})
   }
 
   // Thermal indices.
@@ -560,8 +584,10 @@ function plotData() {
     ],
     "blue", 0
   )
-  drawText(X[1], data.TI, "TI: " + data.TI.toFixed(0) + "ft", "left")
-  drawText(X[1], data.TIM3, "TI-3: " + data.TIM3.toFixed(0) + "ft", "left")
+  drawText(X[1], data.TI, "TI: " + data.TI.toFixed(0) + "ft",
+    {orient: "left"})
+  drawText(X[1], data.TIM3, "TI-3: " + data.TIM3.toFixed(0) + "ft",
+    {orient: "left"})
 
   // Draw cloud base.
   if (data.cloudBase != null) {
@@ -569,10 +595,63 @@ function plotData() {
     if (data.cloudBase <= Y[1]) {
       drawLine(
         X, [cloudBaseY, cloudBaseY],
-        "blue", 1, 500, true)
+        {color: "blue", duration: 500, dashed: true})
     }
-    drawText(X[1], cloudBaseY, "Cloud base: " + data.cloudBase.toFixed(0) + "ft", "left")
+    drawText(X[1], cloudBaseY, "Cloud base: " + data.cloudBase.toFixed(0) + "ft",
+      {orient: "left"})
   }
+
+  // Draw axes.
+  xAxis = g => g
+    .attr("transform", `translate(0,${height - margin.bottom})`)
+    .call(d3.axisBottom(xScale).ticks(xTicks))
+    .call(g => g.select(".domain").remove())
+    .call(g => g.selectAll(".tick line").clone()
+        .attr("y2", -height)
+        .attr("stroke-opacity", 0.2))
+    .call(g => g.append("text")
+        .attr("x", width)
+        .attr("y", 15)
+        .attr("font-weight", "bold")
+        .attr("text-anchor", "end")
+        .attr("fill", "black")
+        .text("T[c]")
+        .call(halo))
+  yAxis = g => g
+    .attr("transform", `translate(${margin.left},0)`)
+    .call(d3.axisLeft(yScale).ticks(yTicks, "s"))
+    .call(g => g.select(".domain").remove())
+    .call(g => g.selectAll(".tick line").clone()
+        .attr("x2", width)
+        .attr("stroke-opacity", 0.2))
+    .call(g => g.select(".tick:last-of-type text").clone()
+        .attr("x", -margin.left)
+        .attr("y", -20)
+        .attr("text-anchor", "start")
+        .attr("font-weight", "bold")
+        .attr("fill", "black")
+        .text("H[ft]")
+        .call(halo))
+  
+  xAxisWind = g => g
+    .attr("transform", `translate(0,${height - margin.bottom/2})`)
+    .call(d3.axisBottom(xScaleWind).ticks(5))
+    .call(g => g.select(".domain").remove())
+    .call(g => g.selectAll(".tick line").clone()
+        .attr("y2", -height)
+        .attr("stroke-opacity", 0.05))
+    .call(g => g.append("text")
+        .attr("x", width/3+50)
+        .attr("y", 15)
+        .attr("font-weight", "bold")
+        .attr("text-anchor", "end")
+        .attr("fill", "black")
+        .text("WindSpeed[kn]")
+        .call(halo))
+
+  svg.append("g").call(xAxis);
+  svg.append("g").call(yAxis);
+  svg.append("g").call(xAxisWind);
 
   function halo(text) {
     text.select(function() { return this.parentNode.insertBefore(this.cloneNode(true), this); })
@@ -607,6 +686,22 @@ async function updatePlace(placeI) {
 
 function error(title, msg) {
   errors.$data.errors.push({title: title, text: msg})  
+}
+
+function defined(x) { return x != undefined }
+function max(a, b) { return (a > b) ? a : b }
+function min(a, b) { return (a < b) ? a : b }
+
+function windDirName(v) {
+  const dirs = [
+    'N', 'NNW', 'NW', 'NWW',
+    'W', 'SWW', 'SW', 'SSW',
+    'S', 'SSE', 'SE', 'SEE',
+    'E', 'NEE', 'NE', 'NNE',
+  ]
+  var part = 360 / dirs.length
+  var i = Math.floor((v + part/2) / part)
+  return dirs[i]
 }
 
 main()
