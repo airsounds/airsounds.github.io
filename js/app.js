@@ -525,7 +525,7 @@ function plotData() {
   drawLine(data.temp, data.alt, "red", 2.5, 1500);
   drawLine(data.dew, data.alt, "blue", 2.5, 1500);
 
-  drawText(X[0], data.h0, `Alt ${data.h0} ft`, "top")
+  drawText(X[1], data.h0, `Alt ${data.h0} ft`, "top")
   // Max temperature diagonals.
   drawPolygon(
     [
