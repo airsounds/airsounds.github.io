@@ -124,8 +124,8 @@ async function fetchAllData() {
       let min = (a,b) => (a < b) ? a : b
 
       day.data = {
-        TIMax: index.$data.places[0].days[0].hours.map(h => h.data.TI).filter(defined).reduce(max).toFixed(0),
-        TIM3Max: index.$data.places[0].days[0].hours.map(h => h.data.TIM3).filter(defined).reduce(max).toFixed(0),
+        TIMax: day.hours.map(h => h.data.TI).filter(defined).reduce(max).toFixed(0),
+        TIM3Max: day.hours.map(h => h.data.TIM3).filter(defined).reduce(max).toFixed(0),
         isTriggered: day.hours.map(hour => hour.data.isTriggered).reduce((a, b) => a || b),
         cloudBaseMin: day.hours.map(hour => hour.data.cloudBase).filter(defined).reduce(min).toFixed(0),
         cloudBaseMax: day.hours.map(hour => hour.data.cloudBase).filter(defined).reduce(max).toFixed(0),
@@ -137,7 +137,7 @@ async function fetchAllData() {
 
 async function fetchData(hour) {
   console.log(`Fetching ${hour.place.name} at ${hour.day.text} ${hour.text}:00`);
-  hour.badge = "badge badge-danger";
+  hour.class = "btn btn-danger";
   
   var datePath = "/data/" + hour.day.text.replace('-', '/').replace('-', '/') + '/' + hour.text + "/";
   const noaaResp = await fetch(datePath + `noaa-${hour.place.name}.json`)
@@ -162,7 +162,7 @@ async function fetchData(hour) {
     noaa: await noaaResp.json(),
     ims: await imsResp.json(),
   }
-  hour.badge = "badge badge-success";
+  hour.class = "btn btn-success";
   console.log(`Successful: ${hour.place.name} at ${hour.day.text} ${hour.text}:00`);
   
   calcData(hour)

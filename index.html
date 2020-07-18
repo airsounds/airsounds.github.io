@@ -45,33 +45,52 @@
 <div id="index" class="overlay">
   <div class="collapse" id="datesPicker">
     <div class="list-group p-4">
-      <div v-for="day in currentPlace.days" href="#" class="list-group-item list-group-item-action flex-column align-items-start">
-        <div class="d-flex w-100 justify-content-between">
-          <p class="mb-1">{{ day.text }}</p>
-                    <a v-for="hour in day.hours" href="#" :onclick="hour.call">
-              <span :class="hour.badge"> 
-                {{ hour.text }}:00
-              </span>
-          </a>
+      <div v-for="day in currentPlace.days" href="#" class="list-group-item list-group-item-action flex-column align-items-start container">
+        <div class="d-flex w-100 justify-content-between row">
+          <div class="col-md-4 col-sm-12">
+            <h5>{{ day.text }}</h>
+          </div>
+          <div class="col-md-8 col-sm-12">
+            <div class="btn-group" role="group" aria-label="Hours">
+              <button v-for="hour in day.hours" type="button" :class="hour.class" :onclick="hour.call">
+                  {{ hour.text }}:00
+              </button>
+            </div>
+          </div>
         </div>
-        <div class="d-flex w-100">
-          <button v-if="day.data.isTriggered" class="btn"><i class="fas fa-burn"></i> <small>Triggered!</small></button>
-          <button class="btn"><i class="fas fa-angle-double-up"></i> <small>{{day.data.TIM3Max}} ~ {{day.data.TIMax}} ft</small></button>
-          <button class="btn"><i class="fas fa-cloud"></i> <small>{{day.data.cloudBaseMin}} ~ {{day.data.cloudBaseMax}} ft</small></span></button>
+        <div class="row">
+          <div class="col-md-2 col-4">
+            <button v-if="day.data.isTriggered" class="btn"><i class="fas fa-burn"></i> <small>Triggered!</small></button>
+          </div>
+          <div class="col-md-2 col-4">
+            <button class="btn"><i class="fas fa-angle-double-up"></i> <small>{{day.data.TIM3Max}}~{{day.data.TIMax}}ft</small></button>
+          </div>
+          <div class="col-md-2 col-4">
+            <button class="btn"><i class="fas fa-cloud"></i> <small>{{day.data.cloudBaseMin}}~{{day.data.cloudBaseMax}}ft</small></span></button>
+          </div>
         </div>
       </div>
     </div>  
   </div>
 
   <div class="collapse" id="placePicker">
-    <div class="p-4">
-    <ul class="list-group">
-      <li v-for="place in places" class="list-group-item d-flex justify-content-between align-items-center">
-        <a href="#" :onclick="place.call">
-            {{ place.name }}
-        </a>
-      </li>
-    </ul>
+    <div class="list-group p-4">
+      <div v-for="place in places" href="#" class="list-group-item list-group-item-action flex-column align-items-start container" :onclick="place.call">
+        <div class="row">
+          <div class="col-md-3 col-12">
+              <h5>{{ place.name }}</h5>
+          </div>
+          <div class="col-md-2 col-4">
+            <button v-if="place.days[0].data.isTriggered" class="btn"><i class="fas fa-burn"></i> <small>Triggered!</small></button>
+          </div>
+          <div class="col-md-2 col-4">
+            <button class="btn"><i class="fas fa-angle-double-up"></i> <small>{{place.days[0].data.TIM3Max}}~{{place.days[0].data.TIMax}}ft</small></button>
+          </div>
+          <div class="col-md-2 col-4">
+            <button class="btn"><i class="fas fa-cloud"></i> <small>{{place.days[0].data.cloudBaseMin}}~{{place.days[0].data.cloudBaseMax}}ft</small></span></button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
