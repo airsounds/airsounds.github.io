@@ -28,14 +28,15 @@ function calcPlotSize() {
 }
 var currentPlotSize = calcPlotSize();
 
-const M = -1000.0 / 3.0
-const altTrigger = 4000.0
+const forecastDays = 3;
+const M = -1000.0 / 3.0;
+const altTrigger = 4000.0;
 
-const X = [0, 50]
-const Y = [0, 6000]
-const margin = ({top: 30, right: 30, bottom: 40, left: 40})
-const hours = [0, 3, 6, 9, 12, 15, 18, 21]
-const importantHours = [6, 9, 12, 15, 18]
+const X = [0, 50];
+const Y = [0, 6000];
+const margin = ({top: 30, right: 30, bottom: 40, left: 40});
+const hours = [0, 3, 6, 9, 12, 15, 18, 21];
+const importantHours = [6, 9, 12, 15, 18];
 
 const xTicks = 10;
 const yTicks = 15;
@@ -44,7 +45,7 @@ const placeNameTranslate = new Map([
   ["megido", "מגידו"],
   ["sde-teiman", "שדה תימן"],
   ["zefat", "צפת"],
-])
+]);
 
 async function main() {
   // Resize plot when window is being resized.
@@ -69,7 +70,7 @@ async function main() {
   
   for (i in index.$data.places) {
     place = index.$data.places[i]
-    createDays(place, new Date(idx.NoaaEnd))
+    createDays(place)
     place.call = `updatePlace(${i})`;
     place.text = placeNameTranslate.getOrElse(place.name, place.name);
   }
@@ -85,15 +86,14 @@ async function main() {
   await fetchAllData();
 }
 
-function createDays(place, maxTime) {
+function createDays(place) {
   place.days = []
 
   // Iterate over time slots. Start from today's morning.
   var t = new Date();
   t.setHours(0);
 
-  var dayI = 0
-  while (true) {  
+  for(dayI = 0; dayI < forecastDays; dayI++) {
     var day = {
       text: dateFormat(t),
       hours: [],
@@ -103,9 +103,6 @@ function createDays(place, maxTime) {
     for (hourI in importantHours) {
       hour = importantHours[hourI]
       t.setHours(hour)
-      if (t > maxTime) {
-        return
-      }
       day.hours.push({
         place: place,
         day: day,
@@ -119,7 +116,6 @@ function createDays(place, maxTime) {
     t.setHours(0)
     t.setDate(t.getDate() + 1);
     place.days.push(day)
-    dayI++;
   }
 }
 
@@ -132,7 +128,9 @@ async function fetchAllData() {
         hour = day.hours[hourI]
         await fetchData(hour);
       }
-
+      if (!hour.success) {
+        continue;
+      }
       day.data = {
         TIMax: day.hours.map(h => h.data.TI).filter(defined).reduce(max).toFixed(0),
         TIM3Max: day.hours.map(h => h.data.TIM3).filter(defined).reduce(max).toFixed(0),
@@ -173,6 +171,7 @@ async function fetchData(hour) {
     ims: await imsResp.json(),
   }
   hour.class = "btn btn-success";
+  hour.success = true;
   console.log(`Successful: ${hour.place.name} at ${hour.day.text} ${hour.text}:00`);
   
   calcData(hour)
