@@ -12,3 +12,12 @@ jobs:
       uses: ./
       with:
         source: noaa
+  ims:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v2
+    - name: Update IMS data
+      uses: ./
+      with:
+        source: ims
