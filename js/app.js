@@ -112,6 +112,7 @@ function createDays(place, maxTime) {
         hour: hour,
         text: pad(hour),
         call: 'updateTime(' + dayI + ', ' + hourI + ')',
+        class: 'btn btn-light',
         data: {},
       })
     }
