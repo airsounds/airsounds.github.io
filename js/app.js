@@ -38,8 +38,9 @@ const margin = ({top: 30, right: 30, bottom: 40, left: 40});
 const hours = [0, 3, 6, 9, 12, 15, 18, 21];
 const importantHours = [6, 9, 12, 15, 18];
 
-const xTicks = 10;
-const yTicks = 15;
+const xTick = 5;
+const yTick = 500;
+const axisFontSize = 13;
 
 const placeNameTranslate = new Map([
   ["megido", "מגידו"],
@@ -182,16 +183,14 @@ async function fetchData(hour) {
 function calcData(hour) {
   data = hour.data;
 
-  var n = data.noaa['Height'].findIndex(v => v > Y[1])+1;
-
-  data.alt = data.noaa['Height'].slice(0, n);
-  data.temp = data.noaa['Temp'].slice(0, n);
-  data.dew = data.noaa['Dew'].slice(0, n);
+  data.alt = data.noaa['Height'];
+  data.temp = data.noaa['Temp'];
+  data.dew = data.noaa['Dew'];
   data.t0 = data.ims['Temp'];
   data.h0 = hour.place.alt; // Ground altitude.
+  data.windDir = data.noaa['WindDir'];
+  data.windSpeed = data.noaa['WindSpeed'];
 
-  data.windDir = data.noaa['WindDir'].slice(0, n);
-  data.windSpeed = data.noaa['WindSpeed'].slice(0, n);
 
   // Thermal index calculations.
   var TI = intersect(data.temp, data.alt, data.t0, data.h0, M);
@@ -222,6 +221,23 @@ function calcData(hour) {
     data.trig = x(data.h0, altTriggerT[1], altTrigger)
     data.isTriggered = data.trig <= data.t0
   }
+
+  // Find the maximal Y value, and get the yTick above it.
+  data.maxY = [Y[1], data.TI, data.TIM3, data.cloudBase]
+    .filter(defined)
+    .reduce(max)
+  data.maxY = Math.ceil(data.maxY / yTick) * yTick;
+  data.minY = Math.floor(data.h0 / yTick) * yTick;
+
+  // Truncate the data values to the maximal Y value.
+  var i = max(data.alt.findIndex(v => v > data.minY) - 1, 0);
+  var j = data.alt.findIndex(v => v > data.maxY) + 1;
+
+  data.alt = data.alt.slice(i, j);
+  data.temp = data.temp.slice(i, j);
+  data.dew = data.dew.slice(i, j);
+  data.windDir = data.windDir.slice(i, j);
+  data.windSpeed = data.windSpeed.slice(i, j);
 }
 
 function y(x, x0, y0) {
@@ -350,17 +366,19 @@ function plotData() {
   }
 
   // Scales for axes.
+  const yLim = [data.minY, data.maxY];
+  const xLim = X;
 
   xScale = d3.scaleLinear()
     .domain(X)
     .nice()
     .range([margin.left, width-margin.right]);
   yScale = d3.scaleLinear()
-    .domain(Y)
+    .domain(yLim)
     .nice()
     .range([height-margin.bottom, margin.top]);
 
-  // Wind drawing is using the same Y axis, but only 1/3 of the X axis.
+  // Wind drawing is using the same Y axis, but only 1/3 of the xLim axis.
   xScaleWind = d3.scaleLinear()
     .domain([data.windSpeed.reduce(min), data.windSpeed.reduce(max)])
     .nice()
@@ -423,15 +441,6 @@ function plotData() {
         .attr('d', d3.line()([[0, 0], [0, size], [size, size/2]]))
         .attr('stroke', color)
         .attr('fill', color);
-      // svg
-      //   .append('path')
-      //   .attr('d', d3.line()([
-      //     [xScale(from[0]), yScale(from[1])],
-      //     [xScale(to[0]), yScale(to[1])],
-      //   ]))
-      //   .attr('stroke', color)
-      //   .attr('marker-end', 'url(#arrow)')
-      //   .attr('fill', 'none');
     }
 
     path = svg.append("path")
@@ -469,7 +478,7 @@ function plotData() {
   function drawText(x, y, text, params) {
     params = initParams(params, {
       xScale: xScale,
-      size: 13,
+      size: 14,
       orient: "right",
       color:"black",
     })
@@ -514,19 +523,19 @@ function plotData() {
   }
 
   // Draw diagonal ticks.
-  for(x0 = X[1]; x0 > X[0]; x0 -= (X[1] - X[0]) / xTicks) {
+  for(x0 = xLim[1]; x0 > xLim[0]; x0 -= xTick) {
     drawLine(
-      [X[0], x0],
-      [y(X[0], x0, Y[0]), Y[0]],
+      [xLim[0], x0],
+      [y(xLim[0], x0, yLim[0]), yLim[0]],
       {color: '#ebecf0'});
   }
   // Draw ground.
   drawPolygon(
     [
-      [X[0], Y[0]],
-      [X[1], Y[0]],
-      [X[1], data.h0],
-      [X[0], data.h0],
+      [xLim[0], yLim[0]],
+      [xLim[1], yLim[0]],
+      [xLim[1], data.h0],
+      [xLim[0], data.h0],
     ],
     "#D2691E", 1.5)
 
@@ -545,20 +554,20 @@ function plotData() {
       {size: 10, xScale: xScaleWind})
   }
 
-  drawText(X[1], data.h0, `Alt ${data.h0} ft`,
+  drawText(xLim[1], data.h0, `Alt: ${data.h0} ft`,
     {orient: "top"})
   // Max temperature diagonals.
   drawPolygon(
     [
       [data.t0, data.h0],
       [data.t0-3, data.h0],
-      [X[0], y(X[0], data.t0-3, data.h0)],
-      [X[0], y(X[0], data.t0, data.h0)],
+      [xLim[0], y(xLim[0], data.t0-3, data.h0)],
+      [xLim[0], y(xLim[0], data.t0, data.h0)],
       
     ],
     "red", 0
   )
-  drawLine([X[0], data.t0], [y(X[0], data.t0, data.h0), data.h0], 
+  drawLine([xLim[0], data.t0], [y(xLim[0], data.t0, data.h0), data.h0], 
     {color: "red"})
   drawPoint(data.t0, data.h0, "red")
   drawText(data.t0, data.h0, "Tmax: "+ data.t0 + "C", 
@@ -578,31 +587,37 @@ function plotData() {
   // Thermal indices.
   drawPolygon(
     [
-      [X[0], data.TI],
-      [X[1], data.TI],
-      [X[1], data.TIM3],
-      [X[0], data.TIM3]
+      [xLim[0], data.TI],
+      [xLim[1], data.TI],
+      [xLim[1], data.TIM3],
+      [xLim[0], data.TIM3]
     ],
     "blue", 0
   )
-  drawText(X[1], data.TI, "TI: " + data.TI.toFixed(0) + "ft",
-    {orient: "left"})
-  drawText(X[1], data.TIM3, "TI-3: " + data.TIM3.toFixed(0) + "ft",
-    {orient: "left"})
+  if (data.TI != data.h0) {
+    drawText(xLim[1], data.TI, "TI: " + data.TI.toFixed(0) + "ft",
+      {orient: "left"})
+  }
+  if (data.TIM3 != data.h0) {
+    drawText(xLim[1], data.TIM3, "TI-3: " + data.TIM3.toFixed(0) + "ft",
+      {orient: "left"})
+  }
 
   // Draw cloud base.
   if (data.cloudBase != null) {
-    var cloudBaseY = Math.min(data.cloudBase, Y[1]);
-    if (data.cloudBase <= Y[1]) {
+    var cloudBaseY = Math.min(data.cloudBase, yLim[1]);
+    if (data.cloudBase <= yLim[1]) {
       drawLine(
-        X, [cloudBaseY, cloudBaseY],
+        xLim, [cloudBaseY, cloudBaseY],
         {color: "blue", duration: 500, dashed: true})
     }
-    drawText(X[1], cloudBaseY, "Cloud base: " + data.cloudBase.toFixed(0) + "ft",
+    drawText(xLim[1], cloudBaseY, "Cloud base: " + data.cloudBase.toFixed(0) + "ft",
       {orient: "left"})
   }
 
   // Draw axes.
+  var yTicks = (yLim[1] - yLim[0]) / yTick;
+  var xTicks = (xLim[1] - xLim[0]) / xTick;
   xAxis = g => g
     .attr("transform", `translate(0,${height - margin.bottom})`)
     .call(d3.axisBottom(xScale).ticks(xTicks))
