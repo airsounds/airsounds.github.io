@@ -78,7 +78,7 @@ async function main() {
 
   // Update the plot with the most recent data first.
   console.log("fetching immediate data...")
-  hoursIndex = importantHours.filter(h => h <= new Date().getHours()).length-1;
+  var hoursIndex = max(importantHours.filter(h => h <= new Date().getHours()).length-1, 0);
   await fetchData(index.$data.places[0].days[0].hours[hoursIndex])
   updateTime(0, hoursIndex)
 
