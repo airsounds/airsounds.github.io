@@ -31,8 +31,6 @@ type NOAA struct {
 	WindDir []int
 	// WindSpeed in knots
 	WindSpeed []int
-	// UpdatedAt is the time that the information was retrieved.
-	Update time.Time
 }
 
 func (n *NOAA) appendFields(fields []string) error {
@@ -103,9 +101,8 @@ func Get(start time.Time, end time.Time, lat, long float32) ([]*NOAA, error) {
 	// 	      4   9750    297    209    171    265     13
 
 	var (
-		scanner   = bufio.NewScanner(resp.Body)
-		ns        []*NOAA
-		updatedAt = time.Now().UTC()
+		scanner = bufio.NewScanner(resp.Body)
+		ns      []*NOAA
 	)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -120,8 +117,7 @@ func Get(start time.Time, end time.Time, lat, long float32) ([]*NOAA, error) {
 			}
 			log.Printf("Found forecast for time: %s", t)
 			ns = append(ns, &NOAA{
-				Time:   t,
-				Update: updatedAt,
+				Time: t,
 			})
 
 			scanner.Scan() // Skip CAPE line
