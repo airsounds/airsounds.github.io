@@ -22,37 +22,42 @@ var (
 )
 
 type Location struct {
-	Name string  `json:"name"`
-	Lat  float32 `json:"lat"`
-	Long float32 `json:"long"`
-	Alt  int     `json:"alt"`
+	Name    string  `json:"name"`
+	Lat     float32 `json:"lat"`
+	Long    float32 `json:"long"`
+	Alt     int     `json:"alt"`
+	IMSName string  `json:-`
 }
 
 var locations = []Location{
 	{
-		Name: "megido",
-		Lat:  32.597662,
-		Long: 35.234076,
-		Alt:  200,
+		Name:    "megido",
+		Lat:     32.597662,
+		Long:    35.234076,
+		Alt:     200,
+		IMSName: "AFULA NIR HAEMEQ",
 	},
 	{
-		Name: "sde-teiman",
-		Lat:  31.287646,
-		Long: 34.722855,
-		Alt:  656,
+		Name:    "sde-teiman",
+		Lat:     31.287646,
+		Long:    34.722855,
+		Alt:     656,
+		IMSName: "BEER SHEVA",
 	},
 	{
-		Name: "zefat",
-		Lat:  32.965719,
-		Long: 35.497225,
-		Alt:  2559,
+		Name:    "zefat",
+		Lat:     32.965719,
+		Long:    35.497225,
+		Alt:     2559,
+		IMSName: "ZEFAT HAR KENAAN",
 	},
-	// {
-	//  Name: "rosh-pina",
-	// 	Lat:  32.968102,
-	// 	Long: 35.538361,
-	// 	Alt:  1230,
-	// },
+	{
+		Name:    "bet-shaan",
+		Lat:     32.102560,
+		Long:    35.197610,
+		Alt:     -394,
+		IMSName: "EDEN FARM",
+	},
 }
 
 var index struct {
@@ -121,25 +126,27 @@ func runNOAA() (paths []string) {
 }
 
 func runIMS() (paths []string) {
-	var locationNames = map[string]bool{}
+	var locationNames = map[string]string{}
 	for _, l := range locations {
-		locationNames[l.Name] = true
+		locationNames[l.IMSName] = l.Name
 	}
 	imss, err := ims.Predict()
 	if err != nil {
 		log.Fatalf("Fetching IMS: %s", err)
 	}
 	for _, i := range imss {
-		if _, ok := locationNames[string(i.Name)]; !ok {
-			log.Printf("Skipping location: %s", i.Name)
+		name := locationNames[string(i.Name)]
+		if name == "" {
+			log.Printf("Skipping unmapped location: %q", i.Name)
 			continue
 		}
+
 		for _, f := range i.Forecast {
 			if f.Time.Truncate(time.Hour*3) != f.Time.Time {
 				continue
 			}
 			datePath := f.Time.Format("2006/01/02/15")
-			path := filepath.Join(dataDir, datePath, fmt.Sprintf("ims-%s.json", i.Name))
+			path := filepath.Join(dataDir, datePath, fmt.Sprintf("ims-%s.json", name))
 			mustEncodeJson(path, f)
 			paths = append(paths, path)
 

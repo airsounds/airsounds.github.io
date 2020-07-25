@@ -46,6 +46,7 @@ const placeNameTranslate = new Map([
   ["megido", "מגידו"],
   ["sde-teiman", "שדה תימן"],
   ["zefat", "צפת"],
+  ["bet-shaan", "בית שאן"]
 ]);
 
 async function main() {
