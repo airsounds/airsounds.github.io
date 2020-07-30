@@ -3,26 +3,36 @@
     "NoaaEnd": "2020-07-20T18:00:00Z",
     "NoaaLastUpdate": "2020-07-17T18:34:02.308266475+03:00",
     "IMSStart": "2020-07-17T15:00:00Z",
-    "IMSEnd": "2020-07-20T12:00:00Z",
-    "IMSLastUpdate": "2020-07-17T18:34:02.55506957+03:00",
+    "IMSEnd": "2020-08-02T06:00:00Z",
+    "IMSLastUpdate": "2020-07-30T10:05:14.935607302+03:00",
     "Locations": [
       {
         "name": "megido",
         "lat": 32.597664,
         "long": 35.234077,
-        "alt": 200
+        "alt": 200,
+        "IMSName": "AFULA NIR HAEMEQ"
       },
       {
         "name": "sde-teiman",
         "lat": 31.287645,
         "long": 34.722855,
-        "alt": 656
+        "alt": 656,
+        "IMSName": "BEER SHEVA"
       },
       {
         "name": "zefat",
         "lat": 32.965717,
         "long": 35.497227,
-        "alt": 2559
+        "alt": 2559,
+        "IMSName": "ZEFAT HAR KENAAN"
+      },
+      {
+        "name": "bet-shaan",
+        "lat": 32.10256,
+        "long": 35.19761,
+        "alt": -394,
+        "IMSName": "EDEN FARM"
       }
     ]
   }

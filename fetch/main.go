@@ -99,6 +99,9 @@ func main() {
 	}
 
 	mustEncodeJson(indexPath, index)
+	if len(modified) > 0 {
+		modified = append(modified, indexPath)
+	}
 
 	commit(modified)
 }
