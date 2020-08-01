@@ -351,6 +351,7 @@ function plotData() {
   
   width = currentPlotSize.w;
   height = currentPlotSize.h;
+  widthWind = ((width - margin.left - margin.right) / 50.0 * 15) + margin.left + margin.right;
   
   var svg = d3
     .select("#graph")
@@ -369,21 +370,22 @@ function plotData() {
   // Scales for axes.
   const yLim = [data.minY, data.maxY];
   const xLim = X;
+  const xLimWind = [0, 30];
 
   xScale = d3.scaleLinear()
     .domain(X)
     .nice()
-    .range([margin.left, width-margin.right]);
+    .range([margin.left, width - margin.right]);
   yScale = d3.scaleLinear()
     .domain(yLim)
     .nice()
-    .range([height-margin.bottom, margin.top]);
+    .range([height - margin.bottom, margin.top]);
 
   // Wind drawing is using the same Y axis, but only 1/3 of the xLim axis.
   xScaleWind = d3.scaleLinear()
-    .domain([data.windSpeed.reduce(min), data.windSpeed.reduce(max)])
+    .domain(xLimWind)
     .nice()
-    .range([margin.left, width/3 - margin.right]);
+    .range([margin.left, widthWind - margin.right]);
 
   function initParams(p, defaults) {
     if (p == undefined) {
@@ -415,7 +417,7 @@ function plotData() {
     }
     
     line = d3.line()
-      .curve(d3.curveCatmullRom)
+      .curve(d3.curveLinear)
       .x(d => d.x)
       .y(d => d.y);
     
@@ -658,12 +660,12 @@ function plotData() {
         .attr("y2", -height)
         .attr("stroke-opacity", 0.05))
     .call(g => g.append("text")
-        .attr("x", width/3+50)
-        .attr("y", 15)
+        .attr("x", widthWind - 18)
+        .attr("y", 17)
         .attr("font-weight", "bold")
-        .attr("text-anchor", "end")
+        .attr("text-anchor", "start")
         .attr("fill", "black")
-        .text("WindSpeed[kn]")
+        .text("Wind [kn]")
         .call(halo))
 
   svg.append("g").call(xAxis);
@@ -719,6 +721,16 @@ function windDirName(v) {
   var part = 360 / dirs.length
   var i = Math.floor((v + part/2) / part)
   return dirs[i]
+}
+
+function placesDropdownClick() {
+  $('#datesPicker').collapse('hide');
+  $('#placePicker').collapse('toggle');
+}
+
+function datesDropdownClick() {
+  $('#datesPicker').collapse('toggle');
+  $('#placePicker').collapse('hide');
 }
 
 main()

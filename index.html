@@ -24,12 +24,12 @@
     <span class="logo logo-buttons"></span>
   </a>
   <div class="navbar-nav mr-auto">
-    <a class="nav-link dropdown-toggle" href="#" id="placesDropdown" role="button" data-target="#placePicker" data-toggle="collapse" aria-controls="placePicker" aria-expanded="false">
+    <a class="nav-link dropdown-toggle" href="#" id="placesDropdown" role="button" onclick="placesDropdownClick()" aria-expanded="false">
       {{ place }}
     </a>
   </div>
   <div class="navbar-nav mr-auto">
-    <a class="nav-link dropdown-toggle" href="#" id="datesDropdown" role="button" data-target="#datesPicker" data-toggle="collapse" aria-controls="datesPicker" aria-expanded="false">
+    <a class="nav-link dropdown-toggle" href="#" id="datesDropdown" role="button" onclick="datesDropdownClick()" aria-expanded="false">
       {{day}} {{hour}}
     </a>
   </div>
