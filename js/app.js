@@ -573,7 +573,7 @@ function plotData() {
   drawLine([xLim[0], data.t0], [y(xLim[0], data.t0, data.h0), data.h0], 
     {color: "red"})
   drawPoint(data.t0, data.h0, "red")
-  drawText(data.t0, data.h0, "Tmax: "+ data.t0 + "C", 
+  drawText(data.t0, data.h0, "T0: "+ data.t0 + "ºC",
     {orient: "top"})
 
   if (data.trig != null) {
@@ -583,7 +583,7 @@ function plotData() {
     }
     drawLine([data.t0, data.trig], [data.h0, data.h0],
       {color: color, duration: 2500, arrowSize: 14})
-    drawText(data.trig, data.h0, "Trigger: "+ data.trig.toFixed(1) + "C",
+    drawText(data.trig, data.h0, "Trigger: "+ data.trig.toFixed(1) + "ºC",
       {orient: "bottom"})
   }
 
@@ -731,6 +731,14 @@ function placesDropdownClick() {
 function datesDropdownClick() {
   $('#datesPicker').collapse('toggle');
   $('#placePicker').collapse('hide');
+}
+
+function showInfo() {
+  document.getElementById('info').style.display = "block"
+}
+
+function hideInfo() {
+  document.getElementById('info').style.display = "none"
 }
 
 main()

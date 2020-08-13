@@ -19,7 +19,7 @@
 <body style="height: 90%;">
 
 <nav id="header" class="navbar navbar-expand-sm navbar-light bg-light">
-  <a class="navbar-brand mr-auto">
+  <a class="navbar-brand mr-auto" onclick="showInfo()">
     <img src="/images/logo.png" width="30" height="30" class="d-inline-block align-top">
     <span class="logo logo-buttons"></span>
   </a>
@@ -116,18 +116,39 @@
   <svg id="graph" ></svg>
 </div>
 
-<div>
+<div id="info" class="fullscreen" onclick="hideInfo()">
+  <div class="card" style="width: 100%; height:100%">
+    <div class="card-body">
+      <h4 class="card-title rtl">אודות אייר סאונד</h4>
+      <p class="card-text rtl">
+        באתר זה מוצגים נתוני בלון וירטואלי ונתוני טמפרטורה שנאספים מאתרים שונים.
+      </p>
+      <p class="card-text rtl">
+        ניתן בתפריט העליון לבחור את אזור התחזית ואת התאריך ושעת התחזית.
+        התחזית ליום הקרוב היא ברזולוציה של 3 שעות, וליומיים שאחרי ברזולוציה של 6 שעות, לפי זמינות הנתונים.
+      </p>
+      <h5>מושגים</h5>
+      <ul>
+        <li><b>T<small><b>0</b></small></b>: Grond level temperature.</li>
+        <li><i class="fas fa-angle-double-up"></i> <b>TI (thermal index)</b>: Maximal theoretical flyable altitude. Based on T<small>0</small>.</li>
+        <li><i class="fas fa-angle-up"></i> <b>TI-3 (thermal index - 3ºC)</b>: probable flyable altitude. Based on T<small>0</small> - 3ºC.</li>
+        <li><i class="fas fa-cloud"></i> <b>Cloud base</b>: Expected cloud base.</li>
+        <li><i class="fas fa-burn"></i> <b>Trigger</b>: The Ground temperature required required for good conditions.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
 <div id="errors" v-for="error in errors" class="alert alert-danger">
   <a href="#" class="close" data-dismiss="alert">&times;</a>
   <strong>{{ error.title }}</strong>
   {{ error.text }}
 </div>
-</div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
-    <script src="/js/app.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+<script src="/js/app.js"></script>
 
 </body>
 </html>
