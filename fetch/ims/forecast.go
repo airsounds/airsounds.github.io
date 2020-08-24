@@ -16,13 +16,15 @@ type ForecastTime struct {
 }
 
 func (c *ForecastTime) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	const format = "02/01/2006 15:04 MST"
+	const format = "2/1/15 15:04 MST"
 	var v string
 	d.DecodeElement(&v, &start)
 	parse, err := time.Parse(format, v)
 	if err != nil {
 		return err
 	}
+	// Workaround issue of invalid year in the ims date:
+	parse = parse.AddDate(time.Now().Year(), 0, 0)
 	*c = ForecastTime{parse}
 	return nil
 }
@@ -31,13 +33,13 @@ type Forecast struct {
 	Name      string  `xml:"LocationMetaData>LocationName"`
 	Lat       float32 `xml:"LocationMetaData>LocationLatitude"`
 	Long      float32 `xml:"LocationMetaData>LocationLongitude"`
-	Elevation int     `xml:"LocationMetaData>LocationHeight"`
+	Elevation float32 `xml:"LocationMetaData>LocationHeight"`
 	Forecast  []struct {
 		Time      ForecastTime `xml:"ForecastTime"`
 		Temp      float32      `xml:"Temperature"`
-		RelHum    int          `xml:"RelativeHumidity"`
+		RelHum    float32      `xml:"RelativeHumidity"`
 		WindSpeed float32      `xml:"WindSpeed"`
-		WindDir   int          `xml:"WindDirection"`
+		WindDir   float32      `xml:"WindDirection"`
 	} `xml:"LocationData>Forecast"`
 }
 
