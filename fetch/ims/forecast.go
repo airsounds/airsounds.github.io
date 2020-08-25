@@ -16,15 +16,13 @@ type ForecastTime struct {
 }
 
 func (c *ForecastTime) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	const format = "2/1/15 15:04 MST"
+	const format = "2/1/2006 15:04 MST"
 	var v string
 	d.DecodeElement(&v, &start)
 	parse, err := time.Parse(format, v)
 	if err != nil {
 		return err
 	}
-	// Workaround issue of invalid year in the ims date:
-	parse = parse.AddDate(time.Now().Year(), 0, 0)
 	*c = ForecastTime{parse}
 	return nil
 }
