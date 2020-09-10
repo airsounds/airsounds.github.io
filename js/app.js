@@ -134,11 +134,11 @@ async function fetchAllData() {
         continue;
       }
       day.data = {
-        TIMax: day.hours.map(h => h.data.TI).filter(defined).reduce(max).toFixed(0),
-        TIM3Max: day.hours.map(h => h.data.TIM3).filter(defined).reduce(max).toFixed(0),
+        TIMax: day.hours.map(h => h.data.TI).reduce(max).toFixed(0),
+        TIM3Max: day.hours.map(h => h.data.TIM3).reduce(max).toFixed(0),
         isTriggered: day.hours.map(hour => hour.data.isTriggered).reduce((a, b) => a || b),
-        cloudBaseMin: day.hours.map(hour => hour.data.cloudBase).filter(defined).reduce(min).toFixed(0),
-        cloudBaseMax: day.hours.map(hour => hour.data.cloudBase).filter(defined).reduce(max).toFixed(0),
+        cloudBaseMin: day.hours.map(hour => hour.data.cloudBase).reduce(min).toFixed(0),
+        cloudBaseMax: day.hours.map(hour => hour.data.cloudBase).reduce(max).toFixed(0),
       }
       index.$forceUpdate() // Update the UI to reflect the aggregation metrics.
     }
@@ -225,7 +225,6 @@ function calcData(hour) {
 
   // Find the maximal Y value, and get the yTick above it.
   data.maxY = [Y[1], data.TI, data.TIM3, data.cloudBase]
-    .filter(defined)
     .reduce(max)
   data.maxY = Math.ceil(data.maxY / yTick) * yTick;
   data.minY = Math.floor(data.h0 / yTick) * yTick;
@@ -713,9 +712,30 @@ function error(title, msg) {
   errors.$data.errors.push({title: title, text: msg})  
 }
 
-function defined(x) { return x != undefined }
-function max(a, b) { return (a > b) ? a : b }
-function min(a, b) { return (a < b) ? a : b }
+function max(a, b) {
+  if (a == undefined && b == undefined) {
+    return Number.MAX_VALUE;
+  }
+  if (a == undefined) {
+    return b;
+  }
+  if (b == undefined) {
+    return a;
+  }
+  return (a > b) ? a : b;
+}
+function min(a, b) {
+  if (a == undefined && b == undefined) {
+    return Number.MIN_VALUE;
+  }
+  if (a == undefined) {
+    return b;
+  }
+  if (b == undefined) {
+    return a;
+  }
+  return (a < b) ? a : b;
+}
 
 function windDirName(v) {
   const dirs = [
