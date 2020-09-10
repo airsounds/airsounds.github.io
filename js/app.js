@@ -682,6 +682,12 @@ function plotData() {
 }
 
 async function updateTime(dayi, houri) {
+
+  if (jQuery.isEmptyObject(index.$data.currentPlace.days[dayi].hours[houri].data)) {
+    error("Not available", "Chosen day and hour are not available")
+    return;
+  }
+
   // Hide menus.
   $('#datesPicker').collapse('hide');
   $('#placePicker').collapse('hide');
