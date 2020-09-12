@@ -21,6 +21,8 @@ var (
 	source = flag.String("source", "", "Which source to update")
 )
 
+var timezone, _ = time.LoadLocation("Asia/Jerusalem")
+
 type Location struct {
 	Name    string  `json:"name"`
 	Lat     float32 `json:"lat"`
@@ -75,7 +77,7 @@ const (
 )
 
 var (
-	startOfDay = time.Now().Truncate(24 * time.Hour)
+	startOfDay = time.Now().In(timezone).Truncate(24 * time.Hour)
 	indexPath  = filepath.Join(dataDir, "index.json")
 )
 
@@ -113,8 +115,7 @@ func runNOAA() (paths []string) {
 			log.Fatalf("Fetching NOAA for %s: %s", loc.Name, err)
 		}
 		for _, n := range ns {
-			datePath := n.Time.Format("2006/01/02/15")
-			path := filepath.Join(dataDir, datePath, fmt.Sprintf("noaa-%s.json", loc.Name))
+			path := outputPath("noaa", loc.Name, n.Time)
 			mustEncodeJson(path, n)
 			paths = append(paths, path)
 
@@ -148,8 +149,7 @@ func runIMS() (paths []string) {
 			if f.Time.Truncate(time.Hour*3) != f.Time.Time {
 				continue
 			}
-			datePath := f.Time.Format("2006/01/02/15")
-			path := filepath.Join(dataDir, datePath, fmt.Sprintf("ims-%s.json", name))
+			path := outputPath("ims", name, f.Time.Time)
 			mustEncodeJson(path, f)
 			paths = append(paths, path)
 
@@ -162,6 +162,10 @@ func runIMS() (paths []string) {
 
 	index.IMSLastUpdate = time.Now()
 	return
+}
+
+func outputPath(sourceName, locationName string, t time.Time) string {
+	return filepath.Join(dataDir, t.Format("2006/01/02/15"), fmt.Sprintf("%s-%s.json", sourceName, locationName))
 }
 
 func mustDecodeJson(path string, data interface{}) {

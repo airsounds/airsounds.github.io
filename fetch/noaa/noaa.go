@@ -71,8 +71,9 @@ func Get(start time.Time, end time.Time, lat, long float32) ([]*NOAA, error) {
 		Start, End time.Time
 		Lat, Long  float32
 	}{
-		Start: start,
-		End:   end,
+		// NOAA expects time in UTC.
+		Start: start.UTC(),
+		End:   end.UTC(),
 		Lat:   lat,
 		Long:  long,
 	})

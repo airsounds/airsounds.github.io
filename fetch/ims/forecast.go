@@ -11,6 +11,9 @@ import (
 
 const forecastPath = "https://ims.data.gov.il/sites/default/files/IMS_001.xml"
 
+// IMS returns times at Israel timezone.
+var israelTimezone, _ = time.LoadLocation("Asia/Jerusalem")
+
 type ForecastTime struct {
 	time.Time
 }
@@ -23,6 +26,7 @@ func (c *ForecastTime) UnmarshalXML(d *xml.Decoder, start xml.StartElement) erro
 	if err != nil {
 		return err
 	}
+	parse = parse.In(israelTimezone)
 	*c = ForecastTime{parse}
 	return nil
 }
