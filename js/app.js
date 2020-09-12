@@ -140,9 +140,22 @@ async function fetchAllData() {
         cloudBaseMin: day.hours.map(hour => hour.data.cloudBase).reduce(min).toFixed(0),
         cloudBaseMax: day.hours.map(hour => hour.data.cloudBase).reduce(max).toFixed(0),
       }
+      day.data.TIText = limitsText(day.data.TIM3Max, day.data.TIMax, ' ft');
+      day.data.cloudBaseText = limitsText(day.data.cloudBaseMin, day.data.cloudBaseMax, 'ft');
       index.$forceUpdate() // Update the UI to reflect the aggregation metrics.
     }
   }
+}
+
+function limitsText(min, max, units) {
+  if (min == 0) {
+    if (max == 0) {
+      return 'N/A';
+    } else {
+      return '<' + max + units
+    }
+  }
+  return min + '~' + max + units;
 }
 
 async function fetchData(hour) {
