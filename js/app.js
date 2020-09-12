@@ -714,7 +714,7 @@ function error(title, msg) {
 
 function max(a, b) {
   if (a == undefined && b == undefined) {
-    return Number.MAX_VALUE;
+    return 0;
   }
   if (a == undefined) {
     return b;
@@ -726,7 +726,7 @@ function max(a, b) {
 }
 function min(a, b) {
   if (a == undefined && b == undefined) {
-    return Number.MIN_VALUE;
+    return 0;
   }
   if (a == undefined) {
     return b;
