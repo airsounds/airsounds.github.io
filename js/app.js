@@ -80,7 +80,7 @@ async function main() {
   // Update the plot with the most recent data first.
   console.log("fetching immediate data...")
   var hoursIndex = max(importantHours.filter(h => h <= new Date().getHours()).length-1, 0);
-  await fetchData(index.$data.places[0].days[0].hours[hoursIndex])
+  await fetchHourData(index.$data.places[0].days[0].hours[hoursIndex])
   updateTime(0, hoursIndex)
 
   // Fetch all other data in background.
@@ -128,11 +128,20 @@ async function fetchAllData() {
       day = place.days[dayI]
       for (hourI in day.hours) {
         hour = day.hours[hourI]
-        await fetchData(hour);
+        await fetchHourData(hour);
       }
       if (!hour.success) {
         continue;
       }
+
+      day.uwyo = day.hours.map(hour => hour.uwyo).reduce((a, b) => b != undefined ? b : a);
+      if (day.uwyo != undefined) {
+        for (hourI in day.hours) {
+          day.hours[hourI].measured = calcData(day.uwyo, hour.data.t0, hour.data.h0);
+          await fetchHourData(hour);
+        }
+      }
+
       day.data = {
         TIMax: day.hours.map(h => h.data.TI).reduce(max).toFixed(0),
         TIM3Max: day.hours.map(h => h.data.TIM3).reduce(max).toFixed(0),
@@ -158,13 +167,14 @@ function limitsText(min, max, units) {
   return min + '~' + max + units;
 }
 
-async function fetchData(hour) {
+async function fetchHourData(hour) {
   console.log(`Fetching ${hour.place.name} at ${hour.day.text} ${hour.text}:00`);
   hour.class = "btn btn-danger";
   
   var datePath = "/data/" + hour.day.text.replace('-', '/').replace('-', '/') + '/' + hour.text + "/";
-  const noaaResp = await fetch(datePath + `noaa-${hour.place.name}.json`)
-  const imsResp = await fetch(datePath + `ims-${hour.place.name}.json`)
+  const noaaResp = await fetch(datePath + `noaa-${hour.place.name}.json`);
+  const imsResp = await fetch(datePath + `ims-${hour.place.name}.json`);
+  const uwyoResp = await fetch(datePath + `uwyo-${hour.place.uwyo_station}.json`);
 
   var errors = 0
 
@@ -177,33 +187,39 @@ async function fetchData(hour) {
     errors++
   }
 
+  if (!uwyoResp.ok) {
+    console.info(`UWYO data for ${hour.day.text}, ${hour.hour}:00 is not available (${imsResp.status}), this might be OK`)
+    // Do not increase errors, we can expect no UWYO data.
+    uwyoResp.json = () => undefined;
+  }
+
   if (errors > 0) {
     return;
   }
 
-  hour.data = {
-    noaa: await noaaResp.json(),
-    ims: await imsResp.json(),
-  }
+  hour.noaa = await noaaResp.json();
+  hour.ims = await imsResp.json();
+  hour.uwyo = await uwyoResp.json();
+
   hour.class = "btn btn-success";
   hour.success = true;
   console.log(`Successful: ${hour.place.name} at ${hour.day.text} ${hour.text}:00`);
   
-  calcData(hour)
+  hour.data = calcData(hour.noaa, hour.ims['Temp'], hour.place.alt)
 
   index.$forceUpdate() // Update the time badge in the UI.
 }
 
-function calcData(hour) {
-  data = hour.data;
-
-  data.alt = data.noaa['Height'];
-  data.temp = data.noaa['Temp'];
-  data.dew = data.noaa['Dew'];
-  data.t0 = data.ims['Temp'];
-  data.h0 = hour.place.alt; // Ground altitude.
-  data.windDir = data.noaa['WindDir'];
-  data.windSpeed = data.noaa['WindSpeed'];
+function calcData(soundingData, t0, h0) {
+  var data = {
+    alt: soundingData['Height'],
+    temp: soundingData['Temp'],
+    dew: soundingData['Dew'],
+    t0: t0,
+    h0: h0, // Ground altitude
+    windDir: soundingData['WindDir'],
+    windSpeed: soundingData['WindSpeed'],
+  }
 
 
   // Thermal index calculations.
@@ -251,6 +267,8 @@ function calcData(hour) {
   data.dew = data.dew.slice(i, j);
   data.windDir = data.windDir.slice(i, j);
   data.windSpeed = data.windSpeed.slice(i, j);
+  
+  return data;
 }
 
 function y(x, x0, y0) {
@@ -353,19 +371,19 @@ function interpolate(p1, p2, y) {
   return p1[0] - (p1[1] - y) / m
 }
 
-function plotData() {
-  hour = index.$data.places[currentDataIdx.place].days[currentDataIdx.day].hours[currentDataIdx.hour];
+function plotData(place, day, hour, ) {
+  var hour = index.$data.places[currentDataIdx.place].days[currentDataIdx.day].hours[currentDataIdx.hour];
 
   // Update headers.
   header.$data.day = hour.day.text
   header.$data.hour = hour.text
   header.$data.place = hour.place.text
   
-  width = currentPlotSize.w;
-  height = currentPlotSize.h;
-  widthWind = ((width - margin.left - margin.right) / 50.0 * 15) + margin.left + margin.right;
+  const width = currentPlotSize.w;
+  const height = currentPlotSize.h;
+  const widthWind = ((width - margin.left - margin.right) / 50.0 * 15) + margin.left + margin.right;
   
-  var svg = d3
+  const svg = d3
     .select("#graph")
     .attr("width", width)
     .attr("height", height);
@@ -373,22 +391,31 @@ function plotData() {
   // Clear content before plotting.
   svg.selectAll('*').remove()
 
-  data = hour.data;
-  if (jQuery.isEmptyObject(data)) {
-    error("No data", "for chosen date");
+  const virtual = hour.data;
+  const measured = hour.measured;
+
+  if (jQuery.isEmptyObject(virtual)) {
+    virtual = undefined;
+  }
+
+  if (virtual == undefined && measured == undefined) {
+    error("No data", "for chosen time");
     return;
   }
+
+  // Data for general use.
+  const data = virtual || measured;
 
   // Scales for axes.
   const yLim = [data.minY, data.maxY];
   const xLim = X;
   const xLimWind = [0, 30];
 
-  xScale = d3.scaleLinear()
+  const xScale = d3.scaleLinear()
     .domain(X)
     .nice()
     .range([margin.left, width - margin.right]);
-  yScale = d3.scaleLinear()
+  const yScale = d3.scaleLinear()
     .domain(yLim)
     .nice()
     .range([height - margin.bottom, margin.top]);
@@ -424,7 +451,7 @@ function plotData() {
       yScale: yScale,
     })
     points = []
-    for (i in data.alt) {
+    for (i in x) {
       points.push(({x: params.xScale(x[i]), y: params.yScale(y[i])}));
     }
     
@@ -553,80 +580,127 @@ function plotData() {
       [xLim[0], data.h0],
     ],
     "#D2691E", 1.5)
+  drawText(xLim[1], virtual.h0, `Alt: ${virtual.h0} ft`,
+    {orient: "top"})
 
   // Draw temperature graphs.
-  drawLine(data.temp, data.alt, 
-    {color: "red", width: 2.5, duration: 1500});
-  drawLine(data.dew, data.alt, 
-    {color: "blue", width: 2.5, duration: 1500});
-
-  // Draw wind
-  drawLine(data.windSpeed, data.alt, 
-    {color: "#444444", duration: 1500, xScale: xScaleWind})
-  for(i in data.windSpeed) {
-    var dir = windDirName(data.windDir[i])
-    drawText(data.windSpeed[i], data.alt[i], data.windSpeed[i] + dir,
-      {size: 10, xScale: xScaleWind})
+  if (virtual != undefined) {
+    drawLine(virtual.temp, virtual.alt, 
+      {color: "red", width: 2, duration: 1500});
+    drawLine(virtual.dew, virtual.alt, 
+      {color: "blue", width: 2, duration: 1500});
+  }
+  if (measured != undefined) {
+    drawLine(measured.temp, measured.alt, 
+      {color: "red", width: 2, duration: 1500, dashed: true});
+    drawLine(measured.dew, measured.alt, 
+      {color: "blue", width: 2, duration: 1500, dashed: true});
   }
 
-  drawText(xLim[1], data.h0, `Alt: ${data.h0} ft`,
-    {orient: "top"})
+  // Draw wind
+  drawLine(virtual.windSpeed, virtual.alt, 
+    {color: "#444444", duration: 1500, xScale: xScaleWind})
+  for(i in virtual.windSpeed) {
+    var dir = windDirName(virtual.windDir[i])
+    drawText(virtual.windSpeed[i], virtual.alt[i], virtual.windSpeed[i] + dir,
+      {size: 10, xScale: xScaleWind})
+  }
+  if (measured != undefined) {
+    drawLine(measured.windSpeed, measured.alt, 
+      {color: "#444444", duration: 1500, xScale: xScaleWind, dashed: true})
+    for(i in measured.windSpeed) {
+      var dir = windDirName(measured.windDir[i])
+      drawText(measured.windSpeed[i], measured.alt[i], measured.windSpeed[i] + dir,
+        {size: 10, xScale: xScaleWind, color: '#444444'})
+    }
+  }
+
   // Max temperature diagonals.
   drawPolygon(
     [
-      [data.t0, data.h0],
-      [data.t0-3, data.h0],
-      [xLim[0], y(xLim[0], data.t0-3, data.h0)],
-      [xLim[0], y(xLim[0], data.t0, data.h0)],
+      [virtual.t0, virtual.h0],
+      [virtual.t0-3, virtual.h0],
+      [xLim[0], y(xLim[0], virtual.t0-3, virtual.h0)],
+      [xLim[0], y(xLim[0], virtual.t0, virtual.h0)],
       
     ],
     "red", 0
   )
-  drawLine([xLim[0], data.t0], [y(xLim[0], data.t0, data.h0), data.h0], 
+  drawLine([xLim[0], virtual.t0], [y(xLim[0], virtual.t0, virtual.h0), virtual.h0], 
     {color: "red"})
-  drawPoint(data.t0, data.h0, "red")
-  drawText(data.t0, data.h0, "T0: "+ data.t0 + "ºC",
+  drawPoint(virtual.t0, virtual.h0, "red")
+  drawText(virtual.t0, virtual.h0, "T0: "+ virtual.t0 + "ºC",
     {orient: "top"})
 
-  if (data.trig != null) {
+  if (virtual.trig != null) {
     var color = 'green';
-    if (!data.isTriggered) {
+    if (!virtual.isTriggered) {
       color = 'red';
     }
-    drawLine([data.t0, data.trig], [data.h0, data.h0],
+    drawLine([virtual.t0, virtual.trig], [virtual.h0, virtual.h0],
       {color: color, duration: 2500, arrowSize: 14})
-    drawText(data.trig, data.h0, "Trigger: "+ data.trig.toFixed(1) + "ºC",
+    drawText(virtual.trig, virtual.h0, "Trigger: "+ virtual.trig.toFixed(1) + "ºC",
       {orient: "bottom"})
   }
 
   // Thermal indices.
   drawPolygon(
     [
-      [xLim[0], data.TI],
-      [xLim[1], data.TI],
-      [xLim[1], data.TIM3],
-      [xLim[0], data.TIM3]
+      [xLim[0], virtual.TI],
+      [xLim[1], virtual.TI],
+      [xLim[1], virtual.TIM3],
+      [xLim[0], virtual.TIM3]
     ],
     "blue", 0
   )
-  if (data.TI != data.h0) {
-    drawText(xLim[1], data.TI, "TI: " + data.TI.toFixed(0) + "ft",
+  if (virtual.TI != data.h0) {
+    drawText(xLim[1], virtual.TI, "TI (virt): " + virtual.TI.toFixed(0) + "ft",
       {orient: "left"})
   }
-  if (data.TIM3 != data.h0) {
-    drawText(xLim[1], data.TIM3, "TI-3: " + data.TIM3.toFixed(0) + "ft",
+  if (virtual.TIM3 != data.h0) {
+    drawText(xLim[1], virtual.TIM3, "TI-3 (virt): " + virtual.TIM3.toFixed(0) + "ft",
       {orient: "left"})
+  }
+  if (measured != undefined) {
+    drawPolygon(
+      [
+        [xLim[0], measured.TI],
+        [xLim[1], measured.TI],
+        [xLim[1], measured.TIM3],
+        [xLim[0], measured.TIM3]
+      ],
+      "green", 0
+    )
+    if (measured.TI != data.h0) {
+      drawText(xLim[1], measured.TI, "TI (measured): " + measured.TI.toFixed(0) + "ft",
+        {orient: "left"})
+    }
+    if (measured.TIM3 != data.h0) {
+      drawText(xLim[1], measured.TIM3, "TI-3 (measured): " + measured.TIM3.toFixed(0) + "ft",
+        {orient: "left"})
+    }
   }
 
   // Draw cloud base.
-  if (data.cloudBase != null) {
-    var cloudBaseY = Math.min(data.cloudBase, yLim[1]);
-    if (data.cloudBase <= yLim[1]) {
+  if (virtual.cloudBase != null) {
+    var cloudBaseY = Math.min(virtual.cloudBase, yLim[1]);
+    if (virtual.cloudBase <= yLim[1]) {
       drawLine(
         xLim, [cloudBaseY, cloudBaseY],
         {color: "blue", duration: 500, dashed: true})
     }
-    drawText(xLim[1], cloudBaseY, "Cloud base: " + data.cloudBase.toFixed(0) + "ft",
+    drawText(xLim[1], cloudBaseY, "Cloud base (virt): " + virtual.cloudBase.toFixed(0) + "ft",
+      {orient: "left"})
+  }
+
+  if (measured != undefined && measured.cloudBase != null) {
+    var cloudBaseY = Math.min(measured.cloudBase, yLim[1]);
+    if (measured.cloudBase <= yLim[1]) {
+      drawLine(
+        xLim, [cloudBaseY, cloudBaseY],
+        {color: "blue", duration: 500, dashed: true})
+    }
+    drawText(xLim[1], cloudBaseY, "Cloud base (measured): " + measured.cloudBase.toFixed(0) + "ft",
       {orient: "left"})
   }
 

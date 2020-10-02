@@ -8,10 +8,12 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/airsounds/airsounds.github.io/fetch/ims"
 	"github.com/airsounds/airsounds.github.io/fetch/noaa"
+	"github.com/airsounds/airsounds.github.io/fetch/uwyo"
 	"github.com/posener/goaction"
 	"github.com/posener/goaction/actionutil"
 )
@@ -24,41 +26,46 @@ var (
 var timezone, _ = time.LoadLocation("Asia/Jerusalem")
 
 type Location struct {
-	Name    string  `json:"name"`
-	Lat     float32 `json:"lat"`
-	Long    float32 `json:"long"`
-	Alt     int     `json:"alt"`
-	IMSName string  `json:-`
+	Name        string  `json:"name"`
+	Lat         float32 `json:"lat"`
+	Long        float32 `json:"long"`
+	Alt         int     `json:"alt"`
+	UWYOStation int     `json:"uwyo_station"`
+	IMSName     string  `json:-`
 }
 
 var locations = []Location{
 	{
-		Name:    "megido",
-		Lat:     32.597662,
-		Long:    35.234076,
-		Alt:     200,
-		IMSName: "AFULA NIR HAEMEQ",
+		Name:        "megido",
+		Lat:         32.597662,
+		Long:        35.234076,
+		Alt:         200,
+		IMSName:     "AFULA NIR HAEMEQ",
+		UWYOStation: 40179, // Bet Dagan
 	},
 	{
-		Name:    "sde-teiman",
-		Lat:     31.287646,
-		Long:    34.722855,
-		Alt:     656,
-		IMSName: "BEER SHEVA",
+		Name:        "sde-teiman",
+		Lat:         31.287646,
+		Long:        34.722855,
+		Alt:         656,
+		IMSName:     "BEER SHEVA",
+		UWYOStation: 40179, // Bet Dagan
 	},
 	{
-		Name:    "zefat",
-		Lat:     32.965719,
-		Long:    35.497225,
-		Alt:     2559,
-		IMSName: "ZEFAT HAR KENAAN",
+		Name:        "zefat",
+		Lat:         32.965719,
+		Long:        35.497225,
+		Alt:         2559,
+		IMSName:     "ZEFAT HAR KENAAN",
+		UWYOStation: 40179, // Bet Dagan
 	},
 	{
-		Name:    "bet-shaan",
-		Lat:     32.102560,
-		Long:    35.197610,
-		Alt:     -394,
-		IMSName: "EDEN FARM",
+		Name:        "bet-shaan",
+		Lat:         32.102560,
+		Long:        35.197610,
+		Alt:         -394,
+		IMSName:     "EDEN FARM",
+		UWYOStation: 40179, // Bet Dagan
 	},
 }
 
@@ -69,6 +76,8 @@ var index struct {
 	IMSStart, IMSEnd time.Time
 	IMSLastUpdate    time.Time
 	Locations        []Location
+
+	UWYOStart, UWYOEnd time.Time
 }
 
 const (
@@ -98,6 +107,10 @@ func main() {
 	}
 	if *source == "ims" || *source == "" {
 		modified = append(modified, runIMS()...)
+	}
+
+	if *source == "uwyo" || *source == "" {
+		modified = append(modified, runUWYO()...)
 	}
 
 	mustEncodeJson(indexPath, index)
@@ -162,6 +175,29 @@ func runIMS() (paths []string) {
 
 	index.IMSLastUpdate = time.Now()
 	return
+}
+
+func runUWYO() (paths []string) {
+	for _, station := range collectStations() {
+		tables, err := uwyo.Fetch(station, time.Now())
+		if err != nil {
+			log.Fatalf("Fetching UWYO: %s", err)
+		}
+		for _, table := range tables {
+			if table.Time.Truncate(time.Hour*3) != table.Time {
+				continue
+			}
+			path := outputPath("uwyo", strconv.Itoa(station), table.Time)
+			mustEncodeJson(path, table)
+			paths = append(paths, path)
+
+			// Update index
+			index.IMSStart = timeMin(index.UWYOStart, table.Time)
+			index.IMSEnd = timeMax(index.UWYOEnd, table.Time)
+			log.Printf("Wrote UWYO file %s", path)
+		}
+	}
+	return nil
 }
 
 func outputPath(sourceName, locationName string, t time.Time) string {
@@ -242,4 +278,16 @@ func timeMax(a, b time.Time) time.Time {
 	default:
 		return b
 	}
+}
+
+func collectStations() []int {
+	stationsSet := map[int]bool{}
+	for _, location := range locations {
+		stationsSet[location.UWYOStation] = true
+	}
+	var stations []int
+	for station := range stationsSet {
+		stations = append(stations, station)
+	}
+	return stations
 }
