@@ -4,13 +4,14 @@
     "NoaaLastUpdate": "2020-10-02T19:16:37.04525553Z",
     "IMSStart": "2020-07-17T15:00:00Z",
     "IMSEnd": "2020-10-06T03:00:00+03:00",
-    "IMSLastUpdate": "2020-10-02T19:16:31.892596269Z",
+    "IMSLastUpdate": "2020-10-02T20:19:05.284172273Z",
     "Locations": [
       {
         "name": "megido",
         "lat": 32.597664,
         "long": 35.234077,
         "alt": 200,
+        "uwyo_station": 40179,
         "IMSName": "AFULA NIR HAEMEQ"
       },
       {
@@ -18,6 +19,7 @@
         "lat": 31.287645,
         "long": 34.722855,
         "alt": 656,
+        "uwyo_station": 40179,
         "IMSName": "BEER SHEVA"
       },
       {
@@ -25,6 +27,7 @@
         "lat": 32.965717,
         "long": 35.497227,
         "alt": 2559,
+        "uwyo_station": 40179,
         "IMSName": "ZEFAT HAR KENAAN"
       },
       {
@@ -32,7 +35,10 @@
         "lat": 32.10256,
         "long": 35.19761,
         "alt": -394,
+        "uwyo_station": 40179,
         "IMSName": "EDEN FARM"
       }
-    ]
+    ],
+    "UWYOStart": "0001-01-01T00:00:00Z",
+    "UWYOEnd": "0001-01-01T00:00:00Z"
   }
