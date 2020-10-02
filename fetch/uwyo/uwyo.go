@@ -16,8 +16,6 @@ import (
 
 const soundingURL = "http://weather.uwyo.edu/cgi-bin/sounding"
 
-var israelTimezone, _ = time.LoadLocation("Asia/Jerusalem")
-
 // UWYO forcast information.
 type UWYO struct {
 	// Time of Forecast
@@ -145,7 +143,6 @@ func parseHeader(s string) (time.Time, error) {
 	if err != nil {
 		return t, err
 	}
-	t = t.In(israelTimezone)
 	return t, nil
 }
 

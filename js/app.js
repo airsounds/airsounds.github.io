@@ -37,6 +37,7 @@ const Y = [0, 6000];
 const margin = ({top: 30, right: 30, bottom: 40, left: 40});
 const hours = [0, 3, 6, 9, 12, 15, 18, 21];
 const importantHours = [6, 9, 12, 15, 18];
+const uwyoHours = [12, 0]; // Hours that the UWYO measurements are given at, reversed.
 
 const xTick = 5;
 const yTick = 500;
@@ -60,31 +61,31 @@ async function main() {
   });
   
   // Fetch index.
-  idexResp = await fetch("/data/index.json");
-  if (!idexResp.ok) {
-    error("Failed getting index", `Response: ${idexResp.status}`);
+  indexResp = await fetch("/data/index.json");
+  if (!indexResp.ok) {
+    error("Failed getting index", `Response: ${indexResp.status}`);
     return;
   }
-  idx = await idexResp.json()
+  idx = await indexResp.json();
 
   index.$data.places = idx.Locations
   index.$data.currentPlace = idx.Locations[0]
   
   for (i in index.$data.places) {
     place = index.$data.places[i]
-    createDays(place)
+    createDays(place);
     place.call = `updatePlace(${i})`;
     place.text = placeNameTranslate.getOrElse(place.name, place.name);
   }
 
   // Update the plot with the most recent data first.
-  console.log("fetching immediate data...")
+  console.log("fetching current data...")
   var hoursIndex = max(importantHours.filter(h => h <= new Date().getHours()).length-1, 0);
-  await fetchHourData(index.$data.places[0].days[0].hours[hoursIndex])
-  updateTime(0, hoursIndex)
+  await fetchDayData(index.$data.places[0].days[0], [hoursIndex]);
+  updateTime(0, hoursIndex);
 
   // Fetch all other data in background.
-  console.log("fetching all data in background...")
+  console.log("fetching all data in background...");
   await fetchAllData();
 }
 
@@ -123,37 +124,46 @@ function createDays(place) {
 
 async function fetchAllData() {
   for (placeI in index.$data.places) {
-    place = index.$data.places[placeI]
+    const place = index.$data.places[placeI];
     for (dayI in place.days) {
-      day = place.days[dayI]
-      for (hourI in day.hours) {
-        hour = day.hours[hourI]
-        await fetchHourData(hour);
-      }
-      if (!hour.success) {
-        continue;
-      }
-
-      day.uwyo = day.hours.map(hour => hour.uwyo).reduce((a, b) => b != undefined ? b : a);
-      if (day.uwyo != undefined) {
-        for (hourI in day.hours) {
-          day.hours[hourI].measured = calcData(day.uwyo, hour.data.t0, hour.data.h0);
-          await fetchHourData(hour);
-        }
-      }
-
-      day.data = {
-        TIMax: day.hours.map(h => h.data.TI).reduce(max).toFixed(0),
-        TIM3Max: day.hours.map(h => h.data.TIM3).reduce(max).toFixed(0),
-        isTriggered: day.hours.map(hour => hour.data.isTriggered).reduce((a, b) => a || b),
-        cloudBaseMin: day.hours.map(hour => hour.data.cloudBase).reduce(min).toFixed(0),
-        cloudBaseMax: day.hours.map(hour => hour.data.cloudBase).reduce(max).toFixed(0),
-      }
-      day.data.TIText = limitsText(day.data.TIM3Max, day.data.TIMax, ' ft');
-      day.data.cloudBaseText = limitsText(day.data.cloudBaseMin, day.data.cloudBaseMax, 'ft');
+      await fetchDayData(place.days[dayI]);
       index.$forceUpdate() // Update the UI to reflect the aggregation metrics.
     }
   }
+}
+
+// Set hoursToFetch to fetch only a specific hours.
+async function fetchDayData(day, hoursIdxToFetch) {
+  if (hoursIdxToFetch == undefined) {
+    hoursIdxToFetch = []
+    for (i in day.hours) {
+      hoursIdxToFetch.push(i);
+    }
+  }
+  for (hourI in hoursIdxToFetch || day.hours) {
+    hour = day.hours[hoursIdxToFetch[hourI]];
+    await fetchHourData(hour);
+  }
+  if (!hour.success) {
+    return;
+  }
+
+  await fetchUWYOData(day);
+  if (day.uwyo != undefined) {
+    for (hourI in hoursIdxToFetch || day.hours) {
+      day.hours[hoursIdxToFetch[hourI]].measured = calcData(day.uwyo, hour.data.t0, hour.data.h0);
+    }
+  }
+
+  day.data = {
+    TIMax: day.hours.map(h => h.data.TI).reduce(max).toFixed(0),
+    TIM3Max: day.hours.map(h => h.data.TIM3).reduce(max).toFixed(0),
+    isTriggered: day.hours.map(hour => hour.data.isTriggered).reduce((a, b) => a || b),
+    cloudBaseMin: day.hours.map(hour => hour.data.cloudBase).reduce(min).toFixed(0),
+    cloudBaseMax: day.hours.map(hour => hour.data.cloudBase).reduce(max).toFixed(0),
+  }
+  day.data.TIText = limitsText(day.data.TIM3Max, day.data.TIMax, ' ft');
+  day.data.cloudBaseText = limitsText(day.data.cloudBaseMin, day.data.cloudBaseMax, 'ft');
 }
 
 function limitsText(min, max, units) {
@@ -174,7 +184,6 @@ async function fetchHourData(hour) {
   var datePath = "/data/" + hour.day.text.replace('-', '/').replace('-', '/') + '/' + hour.text + "/";
   const noaaResp = await fetch(datePath + `noaa-${hour.place.name}.json`);
   const imsResp = await fetch(datePath + `ims-${hour.place.name}.json`);
-  const uwyoResp = await fetch(datePath + `uwyo-${hour.place.uwyo_station}.json`);
 
   var errors = 0
 
@@ -187,19 +196,12 @@ async function fetchHourData(hour) {
     errors++
   }
 
-  if (!uwyoResp.ok) {
-    console.info(`UWYO data for ${hour.day.text}, ${hour.hour}:00 is not available (${imsResp.status}), this might be OK`)
-    // Do not increase errors, we can expect no UWYO data.
-    uwyoResp.json = () => undefined;
-  }
-
   if (errors > 0) {
     return;
   }
 
   hour.noaa = await noaaResp.json();
   hour.ims = await imsResp.json();
-  hour.uwyo = await uwyoResp.json();
 
   hour.class = "btn btn-success";
   hour.success = true;
@@ -208,6 +210,19 @@ async function fetchHourData(hour) {
   hour.data = calcData(hour.noaa, hour.ims['Temp'], hour.place.alt)
 
   index.$forceUpdate() // Update the time badge in the UI.
+}
+
+async function fetchUWYOData(day) {
+  for (i in uwyoHours) {
+    const datePath = "/data/" + day.text.replace('-', '/').replace('-', '/') + '/' + pad(uwyoHours[i]) + "/" + `uwyo-${day.place.uwyo_station}.json`;
+    const uwyoResp = await fetch(datePath);
+    if (!uwyoResp.ok) {
+      continue;
+    }
+    hour.uwyo = await uwyoResp.json();
+    index.$forceUpdate(); // Update the time badge in the UI.
+    return;
+  }
 }
 
 function calcData(soundingData, t0, h0) {
@@ -811,6 +826,7 @@ function max(a, b) {
   }
   return (a > b) ? a : b;
 }
+
 function min(a, b) {
   if (a == undefined && b == undefined) {
     return 0;
@@ -854,4 +870,4 @@ function hideInfo() {
   document.getElementById('info').style.display = "none"
 }
 
-main()
+main();
