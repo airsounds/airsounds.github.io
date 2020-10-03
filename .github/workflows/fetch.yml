@@ -21,3 +21,12 @@ jobs:
       uses: ./
       with:
         source: ims
+  uwyo:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v2
+    - name: Update UWYO data
+      uses: ./
+      with:
+        source: uwyo
