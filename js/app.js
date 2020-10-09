@@ -644,8 +644,6 @@ function plotData() {
     ],
     "red", 0
   )
-  drawLine([xLim[0], virtual.t0], [y(xLim[0], virtual.t0, virtual.h0), virtual.h0], 
-    {color: "red"})
   drawPoint(virtual.t0, virtual.h0, "red")
   drawText(virtual.t0, virtual.h0, "T0: "+ virtual.t0 + "ºC",
     {orient: "top"})
