@@ -219,7 +219,7 @@ async function fetchUWYOData(day) {
     if (!uwyoResp.ok) {
       continue;
     }
-    hour.uwyo = await uwyoResp.json();
+    day.uwyo = await uwyoResp.json();
     index.$forceUpdate(); // Update the time badge in the UI.
     return;
   }
@@ -386,7 +386,7 @@ function interpolate(p1, p2, y) {
   return p1[0] - (p1[1] - y) / m
 }
 
-function plotData(place, day, hour, ) {
+function plotData() {
   var hour = index.$data.places[currentDataIdx.place].days[currentDataIdx.day].hours[currentDataIdx.hour];
 
   // Update headers.
