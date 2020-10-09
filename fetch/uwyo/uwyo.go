@@ -46,9 +46,14 @@ func Fetch(station int, t time.Time) ([]*UWYO, error) {
 	q.Set("TYPE", "TEXT:LIST")
 	q.Set("YEAR", fmt.Sprintf("%4d", t.Year()))
 	q.Set("MONTH", fmt.Sprintf("%02d", t.Month()))
+	// There are two measurements every day. One at 00:00 and a second one at 12:00. For some reason
+	// We can't set the TO to 24:00 or 23:00. We'll just set it to one hour after the second
+	// forecast.
 	q.Set("FROM", fmt.Sprintf("%02d00", t.Day()))
-	q.Set("TO", fmt.Sprintf("%02d23", t.Day()))
+	q.Set("TO", fmt.Sprintf("%02d13", t.Day()))
 	req.URL.RawQuery = q.Encode()
+
+	log.Printf("Fetching from URL %s", req.URL)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
