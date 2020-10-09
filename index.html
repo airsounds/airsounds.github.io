@@ -59,21 +59,26 @@
           </div>
         </div>
         <div class="row">
-          <div class="col-md-2 col-4">
-            <button v-if="day.data.isTriggered" class="btn">
-              <i class="fas fa-burn"></i>
-              <small>Triggered!</small>
-            </button>
-          </div>
-          <div class="col-md-2 col-4">
+          <div class="col-md-2 col-3">
             <button class="btn">
-              <i class="fas fa-angle-double-up"></i>
+              <i class="fas fa-angle-double-up">TI</i>
               <small>{{day.data.TIText}}</small>
             </button>
           </div>
-          <div class="col-md-2 col-4">
-            <button class="btn"><i class="fas fa-cloud"></i>
+          <div class="col-md-2 col-3">
+            <button class="btn"><i class="fas fa-cloud">CB</i>
               <small>{{day.data.cloudBaseText}}</small>
+            </button>
+          </div>
+          <div class="col-md-2 col-3">
+            <button class="btn"><i class="">Measured</i>
+              <small>{{day.data.uwyoHour}}</small>
+            </button>
+          </div>
+          <div class="col-md-2 col-3">
+            <button v-if="day.data.isTriggered" class="btn">
+              <i class="fas fa-burn"></i>
+              <small>Triggered!</small>
             </button>
           </div>
         </div>
@@ -126,6 +131,14 @@
       <p class="card-text rtl">
         ניתן בתפריט העליון לבחור את אזור התחזית ואת התאריך ושעת התחזית.
         התחזית ליום הקרוב היא ברזולוציה של 3 שעות, וליומיים שאחרי ברזולוציה של 6 שעות, לפי זמינות הנתונים.
+      </p>
+      <p class="card-text rtl">
+        הגרף האדום מתאר את מפל הטמפרטורה היבש.
+        הגרף הכחול מתאר את מפל האוויר הרווי.
+        קו מלא מתאר תחזית בלון וירטואלי.
+        קו מקווקו מתאר בלון מדידה.
+        שטח כחול הוא הגובה הצפוי המירבי לפי הבלון הוירטואלי.
+        השטח הירוק הוא גובה צפוי מירבי לפי בלון מדידה.
       </p>
       <h5>מושגים</h5>
       <ul>

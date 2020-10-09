@@ -161,6 +161,7 @@ async function fetchDayData(day, hoursIdxToFetch) {
     isTriggered: day.hours.map(hour => hour.data.isTriggered).reduce((a, b) => a || b),
     cloudBaseMin: day.hours.map(hour => hour.data.cloudBase).reduce(min).toFixed(0),
     cloudBaseMax: day.hours.map(hour => hour.data.cloudBase).reduce(max).toFixed(0),
+    uwyoHour: day.uwyo == undefined ? "N/A" : day.uwyo.hour,
   }
   day.data.TIText = limitsText(day.data.TIM3Max, day.data.TIMax, ' ft');
   day.data.cloudBaseText = limitsText(day.data.cloudBaseMin, day.data.cloudBaseMax, 'ft');
@@ -214,12 +215,14 @@ async function fetchHourData(hour) {
 
 async function fetchUWYOData(day) {
   for (i in uwyoHours) {
-    const datePath = "/data/" + day.text.replace('-', '/').replace('-', '/') + '/' + pad(uwyoHours[i]) + "/" + `uwyo-${day.place.uwyo_station}.json`;
+    const hour = pad(uwyoHours[i]);
+    const datePath = "/data/" + day.text.replace('-', '/').replace('-', '/') + '/' + hour + "/" + `uwyo-${day.place.uwyo_station}.json`;
     const uwyoResp = await fetch(datePath);
     if (!uwyoResp.ok) {
       continue;
     }
     day.uwyo = await uwyoResp.json();
+    day.uwyo.hour = hour + ":00";
     index.$forceUpdate(); // Update the time badge in the UI.
     return;
   }
@@ -387,7 +390,7 @@ function interpolate(p1, p2, y) {
 }
 
 function plotData() {
-  var hour = index.$data.places[currentDataIdx.place].days[currentDataIdx.day].hours[currentDataIdx.hour];
+  var hour = currentHour();
 
   // Update headers.
   header.$data.day = hour.day.text
@@ -601,20 +604,20 @@ function plotData() {
   // Draw temperature graphs.
   if (virtual != undefined) {
     drawLine(virtual.temp, virtual.alt, 
-      {color: "red", width: 2, duration: 1500});
+      {color: "red", width: 2});
     drawLine(virtual.dew, virtual.alt, 
-      {color: "blue", width: 2, duration: 1500});
+      {color: "blue", width: 2});
   }
   if (measured != undefined) {
     drawLine(measured.temp, measured.alt, 
-      {color: "red", width: 2, duration: 1500, dashed: true});
+      {color: "red", width: 2, dashed: true});
     drawLine(measured.dew, measured.alt, 
-      {color: "blue", width: 2, duration: 1500, dashed: true});
+      {color: "blue", width: 2, dashed: true});
   }
 
   // Draw wind
   drawLine(virtual.windSpeed, virtual.alt, 
-    {color: "#444444", duration: 1500, xScale: xScaleWind})
+    {color: "#444444", xScale: xScaleWind})
   for(i in virtual.windSpeed) {
     var dir = windDirName(virtual.windDir[i])
     drawText(virtual.windSpeed[i], virtual.alt[i], virtual.windSpeed[i] + dir,
@@ -622,7 +625,7 @@ function plotData() {
   }
   if (measured != undefined) {
     drawLine(measured.windSpeed, measured.alt, 
-      {color: "#444444", duration: 1500, xScale: xScaleWind, dashed: true})
+      {color: "#444444", xScale: xScaleWind, dashed: true})
     for(i in measured.windSpeed) {
       var dir = windDirName(measured.windDir[i])
       drawText(measured.windSpeed[i], measured.alt[i], measured.windSpeed[i] + dir,
@@ -868,6 +871,18 @@ function showInfo() {
 
 function hideInfo() {
   document.getElementById('info').style.display = "none"
+}
+
+function currentPlace() {
+  return index.$data.places[currentDataIdx.place];
+}
+
+function currentDay() {
+  return currentPlace().days[currentDataIdx.day];
+}
+
+function currentHour() {
+  return currentDay().hours[currentDataIdx.hour];
 }
 
 main();
