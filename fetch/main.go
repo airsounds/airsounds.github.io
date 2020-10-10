@@ -192,8 +192,8 @@ func runUWYO() (paths []string) {
 			paths = append(paths, path)
 
 			// Update index
-			index.IMSStart = timeMin(index.UWYOStart, table.Time)
-			index.IMSEnd = timeMax(index.UWYOEnd, table.Time)
+			index.UWYOStart = timeMin(index.UWYOStart, table.Time)
+			index.UWYOEnd = timeMax(index.UWYOEnd, table.Time)
 			log.Printf("Wrote UWYO file %s", path)
 		}
 	}
