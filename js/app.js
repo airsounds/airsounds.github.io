@@ -151,7 +151,8 @@ async function fetchDayData(day, hoursIdxToFetch) {
   await fetchUWYOData(day);
   if (day.uwyo != undefined) {
     for (hourI in hoursIdxToFetch || day.hours) {
-      day.hours[hoursIdxToFetch[hourI]].measured = calcData(day.uwyo, hour.data.t0, hour.data.h0);
+      var hour = day.hours[hoursIdxToFetch[hourI]];
+      hour.measured = calcData(day.uwyo, hour);
     }
   }
 
@@ -208,7 +209,7 @@ async function fetchHourData(hour) {
   hour.success = true;
   console.log(`Successful: ${hour.place.name} at ${hour.day.text} ${hour.text}:00`);
   
-  hour.data = calcData(hour.noaa, hour.ims['Temp'], hour.place.alt)
+  hour.data = calcData(hour.noaa, hour)
 
   index.$forceUpdate() // Update the time badge in the UI.
 }
@@ -228,13 +229,13 @@ async function fetchUWYOData(day) {
   }
 }
 
-function calcData(soundingData, t0, h0) {
+function calcData(soundingData, hour) {
   var data = {
     alt: soundingData['Height'],
     temp: soundingData['Temp'],
     dew: soundingData['Dew'],
-    t0: t0,
-    h0: h0, // Ground altitude
+    t0: hour.ims['Temp'], // Temperature at ground level.
+    h0: hour.place.alt, // Ground altitude.
     windDir: soundingData['WindDir'],
     windSpeed: soundingData['WindSpeed'],
   }
@@ -242,6 +243,7 @@ function calcData(soundingData, t0, h0) {
 
   // Thermal index calculations.
   var TI = intersect(data.temp, data.alt, data.t0, data.h0, M);
+  // Set the thermal index to be not lower than the ground level.
   if (TI != null && TI[1] >= data.h0) {
     data.TI = TI[1];
   } else {
