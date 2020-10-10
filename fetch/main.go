@@ -197,7 +197,7 @@ func runUWYO() (paths []string) {
 			log.Printf("Wrote UWYO file %s", path)
 		}
 	}
-	return nil
+	return
 }
 
 func outputPath(sourceName, locationName string, t time.Time) string {
