@@ -121,26 +121,24 @@ function createDays(place) {
 
 // If first is set, fetch only first place. Otherwise fetch all other places.
 async function fetchAllData(first) {
-  const places = (first) ? [index.$data.places[0]] : index.$data.places.slice(1, index.$data.places.length - 1);
-  await Promise.all(places.map(place => fetchPlaceData(place, first)));
+  const f = (i, _) => first || i != 0;
+  await Promise.all(index.$data.places.filter(f).map(place => fetchPlaceData(place, first)));
 }
 
 // If first is set, fetch only first day of place. Otherwise, fetch all other days of the place.
 async function fetchPlaceData(place, first) {
-  const days = (first) ? [place.days[0]] : place.days.slice(1, place.days.length - 1);
-  await Promise.all(days.map(fetchDayData));
+  const f = (i, _) => first || i != 0;
+  await Promise.all(place.days.filter(f).map(fetchDayData));
 }
 
 // Set hoursToFetch to fetch only a specific hours.
 async function fetchDayData(day) {
-  await Promise.all(
-    day.hours.map(fetchHourData) +
-    [fetchUWYOData(day)]
-  );
+  await Promise.all(day.hours.map(fetchHourData));
+  await fetchUWYOData(day);
   if (day.uwyo != undefined) {
-    await Promise.all(day.hours.map(hour => {
+    day.hours.map(hour => {
       hour.measured = calcData(day.uwyo, hour);
-    }));
+    });
   }
 
   day.data = {
@@ -153,6 +151,8 @@ async function fetchDayData(day) {
   }
   day.data.TIText = limitsText(day.data.TIM3Max, day.data.TIMax, ' ft');
   day.data.cloudBaseText = limitsText(day.data.cloudBaseMin, day.data.cloudBaseMax, 'ft');
+
+  index.$forceUpdate();
 }
 
 function limitsText(min, max, units) {
@@ -198,7 +198,7 @@ async function fetchHourData(hour) {
   hour.success = true;
   console.log(`Successful: ${hour.place.name} at ${hour.day.text} ${hour.text}:00`);
   
-  hour.data = await calcData(hour.noaa, hour)
+  hour.data = calcData(hour.noaa, hour)
 
   index.$forceUpdate() // Update the time badge in the UI.
 }
@@ -218,7 +218,7 @@ async function fetchUWYOData(day) {
   }
 }
 
-async function calcData(soundingData, hour) {
+function calcData(soundingData, hour) {
   var data = {
     alt: soundingData['Height'],
     temp: soundingData['Temp'],
