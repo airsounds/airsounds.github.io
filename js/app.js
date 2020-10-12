@@ -121,14 +121,12 @@ function createDays(place) {
 
 // If first is set, fetch only first place. Otherwise fetch all other places.
 async function fetchAllData(first) {
-  const f = (i, _) => first || i != 0;
-  await Promise.all(index.$data.places.filter(f).map(place => fetchPlaceData(place, first)));
+  await Promise.all(index.$data.places.filter((_, i) => first ? i == 0 : true).map(place => fetchPlaceData(place, first)));
 }
 
 // If first is set, fetch only first day of place. Otherwise, fetch all other days of the place.
 async function fetchPlaceData(place, first) {
-  const f = (i, _) => first || i != 0;
-  await Promise.all(place.days.filter(f).map(fetchDayData));
+  await Promise.all(place.days.filter((_, i) => first ? i == 0 : true).map(fetchDayData));
 }
 
 // Set hoursToFetch to fetch only a specific hours.
