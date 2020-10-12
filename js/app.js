@@ -71,17 +71,16 @@ async function main() {
   index.$data.places = idx.Locations
   index.$data.currentPlace = idx.Locations[0]
   
-  for (i in index.$data.places) {
-    place = index.$data.places[i]
+  index.$data.places.map((place, i) => {
     createDays(place);
     place.call = `updatePlace(${i})`;
     place.text = placeNameTranslate.getOrElse(place.name, place.name);
-  }
+  });
 
   // Update the plot with the most recent data first.
   console.log("fetching current data...")
   var hoursIndex = max(importantHours.filter(h => h <= new Date().getHours()).length-1, 0);
-  await fetchDayData(index.$data.places[0].days[0], [hoursIndex]);
+  await fetchDayData(index.$data.places[0].days[0], [index.$data.places[0].days[0].hours[hoursIndex]]);
   updateTime(0, hoursIndex);
 
   // Fetch all other data in background.
@@ -103,8 +102,7 @@ function createDays(place) {
       place: place,
       data: {},
     }
-    for (hourI in importantHours) {
-      hour = importantHours[hourI]
+    importantHours.map((hour, hourI) => {
       t.setHours(hour)
       day.hours.push({
         place: place,
@@ -115,7 +113,7 @@ function createDays(place) {
         class: 'btn btn-light',
         data: {},
       })
-    }
+    });
     t.setHours(0)
     t.setDate(t.getDate() + 1);
     place.days.push(day)
@@ -123,37 +121,20 @@ function createDays(place) {
 }
 
 async function fetchAllData() {
-  for (placeI in index.$data.places) {
-    const place = index.$data.places[placeI];
-    for (dayI in place.days) {
-      await fetchDayData(place.days[dayI]);
-      index.$forceUpdate() // Update the UI to reflect the aggregation metrics.
-    }
-  }
+  await Promise.all(index.$data.places.map(place => { place.days.map(day => fetchDayData(day).then(() => { index.$forceUpdate() })) }));
 }
 
 // Set hoursToFetch to fetch only a specific hours.
-async function fetchDayData(day, hoursIdxToFetch) {
-  if (hoursIdxToFetch == undefined) {
-    hoursIdxToFetch = []
-    for (i in day.hours) {
-      hoursIdxToFetch.push(i);
-    }
+async function fetchDayData(day, hoursToFetch) {
+  if (hoursToFetch == undefined) {
+    hoursToFetch = day.hours;
   }
-  for (hourI in hoursIdxToFetch || day.hours) {
-    hour = day.hours[hoursIdxToFetch[hourI]];
-    await fetchHourData(hour);
-  }
-  if (!hour.success) {
-    return;
-  }
-
+  await Promise.all(hoursToFetch.map(fetchHourData));
   await fetchUWYOData(day);
   if (day.uwyo != undefined) {
-    for (hourI in hoursIdxToFetch || day.hours) {
-      var hour = day.hours[hoursIdxToFetch[hourI]];
+    hoursToFetch.map(hour => {
       hour.measured = calcData(day.uwyo, hour);
-    }
+    });
   }
 
   day.data = {
@@ -184,8 +165,10 @@ async function fetchHourData(hour) {
   hour.class = "btn btn-danger";
   
   var datePath = "/data/" + hour.day.text.replace('-', '/').replace('-', '/') + '/' + hour.text + "/";
-  const noaaResp = await fetch(datePath + `noaa-${hour.place.name}.json`);
-  const imsResp = await fetch(datePath + `ims-${hour.place.name}.json`);
+  const [noaaResp, imsResp] = await Promise.all([
+    fetch(datePath + `noaa-${hour.place.name}.json`),
+    fetch(datePath + `ims-${hour.place.name}.json`),
+  ])
 
   var errors = 0
 
