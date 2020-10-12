@@ -77,15 +77,14 @@ async function main() {
     place.text = placeNameTranslate.getOrElse(place.name, place.name);
   });
 
-  // Update the plot with the most recent data first.
-  console.log("fetching current data...")
-  var hoursIndex = max(importantHours.filter(h => h <= new Date().getHours()).length-1, 0);
-  await fetchDayData(index.$data.places[0].days[0], [index.$data.places[0].days[0].hours[hoursIndex]]);
+  // Fetch only first place and first day, to show the UI faster.
+  await fetchAllData(true)
+  const hoursIndex = max(importantHours.filter(h => h <= new Date().getHours()).length - 1, 0);
   updateTime(0, hoursIndex);
 
   // Fetch all other data in background.
   console.log("fetching all data in background...");
-  await fetchAllData();
+  await fetchAllData(false);
 }
 
 function createDays(place) {
@@ -120,21 +119,28 @@ function createDays(place) {
   }
 }
 
-async function fetchAllData() {
-  await Promise.all(index.$data.places.map(place => { place.days.map(day => fetchDayData(day).then(() => { index.$forceUpdate() })) }));
+// If first is set, fetch only first place. Otherwise fetch all other places.
+async function fetchAllData(first) {
+  const places = (first) ? [index.$data.places[0]] : index.$data.places.slice(1, index.$data.places.length - 1);
+  await Promise.all(places.map(place => fetchPlaceData(place, first)));
+}
+
+// If first is set, fetch only first day of place. Otherwise, fetch all other days of the place.
+async function fetchPlaceData(place, first) {
+  const days = (first) ? [place.days[0]] : place.days.slice(1, place.days.length - 1);
+  await Promise.all(days.map(fetchDayData));
 }
 
 // Set hoursToFetch to fetch only a specific hours.
-async function fetchDayData(day, hoursToFetch) {
-  if (hoursToFetch == undefined) {
-    hoursToFetch = day.hours;
-  }
-  await Promise.all(hoursToFetch.map(fetchHourData));
-  await fetchUWYOData(day);
+async function fetchDayData(day) {
+  await Promise.all(
+    day.hours.map(fetchHourData) +
+    [fetchUWYOData(day)]
+  );
   if (day.uwyo != undefined) {
-    hoursToFetch.map(hour => {
+    await Promise.all(day.hours.map(hour => {
       hour.measured = calcData(day.uwyo, hour);
-    });
+    }));
   }
 
   day.data = {
@@ -192,7 +198,7 @@ async function fetchHourData(hour) {
   hour.success = true;
   console.log(`Successful: ${hour.place.name} at ${hour.day.text} ${hour.text}:00`);
   
-  hour.data = calcData(hour.noaa, hour)
+  hour.data = await calcData(hour.noaa, hour)
 
   index.$forceUpdate() // Update the time badge in the UI.
 }
@@ -212,7 +218,7 @@ async function fetchUWYOData(day) {
   }
 }
 
-function calcData(soundingData, hour) {
+async function calcData(soundingData, hour) {
   var data = {
     alt: soundingData['Height'],
     temp: soundingData['Temp'],
