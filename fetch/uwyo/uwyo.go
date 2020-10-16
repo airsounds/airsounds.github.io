@@ -36,6 +36,11 @@ type UWYO struct {
 }
 
 func Fetch(station int, t time.Time) ([]*UWYO, error) {
+	// Measurement are only available in 12 hours periods, at 00 and 12.
+	hour := "00"
+	if t.Hour() > 12 {
+		hour = "12"
+	}
 	req, err := http.NewRequest(http.MethodGet, soundingURL, nil)
 	if err != nil {
 		return nil, err
@@ -46,10 +51,8 @@ func Fetch(station int, t time.Time) ([]*UWYO, error) {
 	q.Set("TYPE", "TEXT:LIST")
 	q.Set("YEAR", fmt.Sprintf("%4d", t.Year()))
 	q.Set("MONTH", fmt.Sprintf("%02d", t.Month()))
-	// There are two measurements every day. One at 00:00 and a second one at 12:00. For some reason
-	// The hours part must be either `00` or `12`.
-	q.Set("FROM", fmt.Sprintf("%02d00", t.Day()))
-	q.Set("TO", fmt.Sprintf("%02d12", t.Day()))
+	q.Set("FROM", fmt.Sprintf("%02d%s", t.Day(), hour))
+	q.Set("TO", fmt.Sprintf("%02d%s", t.Day(), hour))
 	req.URL.RawQuery = q.Encode()
 
 	log.Printf("Fetching from URL %s", req.URL)
