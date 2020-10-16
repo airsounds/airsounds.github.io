@@ -28,7 +28,7 @@ function calcPlotSize() {
 }
 var currentPlotSize = calcPlotSize();
 
-const forecastDays = 3;
+const forecastDays = 4;
 const M = -1000.0 / 3.0;
 const altTrigger = 4000.0;
 
