@@ -159,9 +159,6 @@ func runIMS() (paths []string) {
 		}
 
 		for _, f := range i.Forecast {
-			if f.Time.Truncate(time.Hour*3) != f.Time.Time {
-				continue
-			}
 			path := outputPath("ims", name, f.Time.Time)
 			mustEncodeJson(path, f)
 			paths = append(paths, path)
@@ -184,9 +181,6 @@ func runUWYO() (paths []string) {
 			log.Fatalf("Fetching UWYO: %s", err)
 		}
 		for _, table := range tables {
-			if table.Time.Truncate(time.Hour*3) != table.Time {
-				continue
-			}
 			path := outputPath("uwyo", strconv.Itoa(station), table.Time)
 			mustEncodeJson(path, table)
 			paths = append(paths, path)
