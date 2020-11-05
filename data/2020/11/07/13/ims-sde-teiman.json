@@ -1,7 +1,7 @@
 {
     "Time": "2020-11-07T13:00:00Z",
-    "Temp": 22,
-    "RelHum": 48,
+    "Temp": 22.9,
+    "RelHum": 45,
     "WindSpeed": 0.8,
     "WindDir": 273
   }
