@@ -2,6 +2,6 @@
     "Time": "2020-11-10T23:00:00Z",
     "Temp": 16.3,
     "RelHum": 97,
-    "WindSpeed": 0.1,
-    "WindDir": 30
+    "WindSpeed": 0,
+    "WindDir": 270
   }
