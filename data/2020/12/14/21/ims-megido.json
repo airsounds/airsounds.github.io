@@ -1,7 +1,7 @@
 {
     "Time": "2020-12-14T21:00:00Z",
-    "Temp": 14.1,
-    "RelHum": 92,
-    "WindSpeed": 1.5,
-    "WindDir": 57
+    "Temp": 14.5,
+    "RelHum": 99,
+    "WindSpeed": 0.1,
+    "WindDir": 30
   }
