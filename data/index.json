@@ -3,8 +3,8 @@
     "NoaaEnd": "2020-12-31T12:00:00Z",
     "NoaaLastUpdate": "2020-12-28T07:30:08.026406416Z",
     "IMSStart": "2020-10-09T12:00:00Z",
-    "IMSEnd": "2020-12-31T12:00:00Z",
-    "IMSLastUpdate": "2020-12-28T07:29:45.121888356Z",
+    "IMSEnd": "2020-12-31T13:00:00Z",
+    "IMSLastUpdate": "2020-12-28T08:27:39.924662341Z",
     "Locations": [
       {
         "name": "megido",
