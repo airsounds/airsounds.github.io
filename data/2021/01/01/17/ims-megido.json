@@ -1,7 +1,7 @@
 {
     "Time": "2021-01-01T17:00:00Z",
-    "Temp": 16,
+    "Temp": 16.5,
     "RelHum": 60,
-    "WindSpeed": 1.1,
-    "WindDir": 63
+    "WindSpeed": 0.8,
+    "WindDir": 42
   }
