@@ -2,6 +2,6 @@
     "Time": "2021-02-28T08:00:00Z",
     "Temp": 20,
     "RelHum": 42,
-    "WindSpeed": 0.6,
-    "WindDir": 11
+    "WindSpeed": 1,
+    "WindDir": 24
   }
