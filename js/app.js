@@ -35,8 +35,8 @@ const altTrigger = 4000.0;
 const X = [0, 50];
 const Y = [0, 6000];
 const margin = ({top: 30, right: 30, bottom: 40, left: 40});
-const hours = [0, 3, 6, 9, 12, 15, 18, 21];
-const importantHours = [6, 9, 12, 15, 18];
+const importantHours = [10, 11, 12, 13, 14, 15, 16];
+// const importantHours = [16,17,18,19,20,21];
 const uwyoHours = [12, 0]; // Hours that the UWYO measurements are given at, reversed.
 
 const xTick = 5;
@@ -135,7 +135,9 @@ async function fetchDayData(day) {
   await fetchUWYOData(day);
   if (day.uwyo != undefined) {
     day.hours.map(hour => {
-      hour.measured = calcData(day.uwyo, hour);
+      if (hour.ims != undefined) {
+        hour.measured = calcData(day.uwyo, hour);
+      }
     });
   }
 

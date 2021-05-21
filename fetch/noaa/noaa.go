@@ -13,7 +13,7 @@ import (
 	"github.com/posener/tmplt"
 )
 
-var url = tmplt.Text("https://rucsoundings.noaa.gov/get_soundings.cgi?data_source=GFS&start_year={{.Start.Year}}&start_month_name={{.Start.Month}}&start_mday={{.Start.Day}}&start_hour={{.Start.Hour}}&start_min=0&n_hrs=1.0&fcst_len=shortest&airport={{.Lat}}%2C{{.Long}}&text=Ascii%20text%20%28GSD%20format%29&hydrometeors=false&startSecs={{.Start.Unix}}&endSecs={{.End.Unix}}")
+var url = tmplt.Text("https://rucsoundings.noaa.gov/get_soundings.cgi?data_source=GFS&start_year={{.Start.Year}}&start_month_name={{.Start.Month}}&start_mday={{.Start.Day}}&start_hour=0&start_min=0&n_hrs=1.0&fcst_len=shortest&airport={{.Lat}}%2C{{.Long}}&text=Ascii%20text%20%28GSD%20format%29&hydrometeors=false&startSecs={{.Start.Unix}}&endSecs={{.End.Unix}}")
 
 // NOAA forcast information.
 type NOAA struct {
@@ -137,6 +137,7 @@ func Get(start time.Time, end time.Time, lat, long float32) ([]*NOAA, error) {
 			return nil, fmt.Errorf("failed loading fields %q: %s", fields, err)
 		}
 	}
+	ns = interpolateMissingHours(ns)
 	return ns, scanner.Err()
 }
 
@@ -160,4 +161,39 @@ var (
 func parseTimeLine(line string) (time.Time, error) {
 	timeStr := strings.Join(forecastHeader2.FindStringSubmatch(line)[1:], " ")
 	return time.Parse("15 2 Jan 2006", timeStr)
+}
+
+func interpolateMissingHours(values []*NOAA) []*NOAA {
+	if len(values) == 0 {
+		return nil
+	}
+	out := []*NOAA{values[0]}
+	for _, next := range values {
+		last := out[len(out)-1]
+		for t := last.Time.Add(time.Hour); t.Before(next.Time); t = t.Add(time.Hour) {
+			r := float64(t.Hour()-last.Time.Hour()) / float64(next.Time.Hour()-last.Time.Hour())
+			out = append(out, &NOAA{
+				Time:      t,
+				Pressure:  interpolate(r, last.Pressure, next.Pressure),
+				Height:    interpolate(r, last.Height, next.Height),
+				Temp:      interpolate(r, last.Temp, next.Temp),
+				Dew:       interpolate(r, last.Dew, next.Dew),
+				WindDir:   interpolate(r, last.WindDir, next.WindDir),
+				WindSpeed: interpolate(r, last.WindSpeed, next.WindSpeed),
+			})
+		}
+		out = append(out, next)
+	}
+	return out
+}
+
+func interpolate(r float64, x1 []int, x2 []int) []int {
+	if len(x1) != len(x2) {
+		panic("not equal len")
+	}
+	ret := make([]int, len(x1))
+	for i := range x1 {
+		ret[i] = x1[i] + int(r*float64(x2[i]-x1[i]))
+	}
+	return ret
 }
