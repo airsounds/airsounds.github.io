@@ -19,10 +19,14 @@ func (c *ForecastTime) UnmarshalXML(d *xml.Decoder, start xml.StartElement) erro
 	const format = "2/1/2006 15:04 MST"
 	var v string
 	d.DecodeElement(&v, &start)
+	// // The IMS timestamps are given in the format "2/1/2006 15:04 MST". The timezone used is
+	// // always set to "UTC" where it is actually should be in IDT.
+	// v = v[:len(v)-3] + "IDT"
 	parse, err := time.Parse(format, v)
 	if err != nil {
 		return err
 	}
+	parse = parse.UTC()
 	*c = ForecastTime{parse}
 	return nil
 }

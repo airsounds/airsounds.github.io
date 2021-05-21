@@ -128,14 +128,14 @@ func runNOAA() (paths []string) {
 			log.Fatalf("Fetching NOAA for %s: %s", loc.Name, err)
 		}
 		for _, n := range ns {
-			path := outputPath("noaa", loc.Name, n.Time)
+			path := outputPath("noaa", loc.Name, n.Time.In(timezone))
 			mustEncodeJson(path, n)
 			paths = append(paths, path)
 
 			// Update index
 			index.NoaaLastUpdate = time.Now()
-			index.NoaaStart = timeMin(index.NoaaStart, n.Time)
-			index.NoaaEnd = timeMax(index.NoaaEnd, n.Time)
+			index.NoaaStart = timeMin(index.NoaaStart, n.Time.In(timezone))
+			index.NoaaEnd = timeMax(index.NoaaEnd, n.Time.In(timezone))
 			log.Printf("Wrote NOAA forcast file %s", path)
 		}
 	}
@@ -159,13 +159,13 @@ func runIMS() (paths []string) {
 		}
 
 		for _, f := range i.Forecast {
-			path := outputPath("ims", name, f.Time.Time)
+			path := outputPath("ims", name, f.Time.Time.In(timezone))
 			mustEncodeJson(path, f)
 			paths = append(paths, path)
 
 			// Update index
-			index.IMSStart = timeMin(index.IMSStart, f.Time.Time)
-			index.IMSEnd = timeMax(index.IMSEnd, f.Time.Time)
+			index.IMSStart = timeMin(index.IMSStart, f.Time.Time.In(timezone))
+			index.IMSEnd = timeMax(index.IMSEnd, f.Time.Time.In(timezone))
 			log.Printf("Wrote IMS forcast file %s", path)
 		}
 	}
@@ -181,13 +181,13 @@ func runUWYO() (paths []string) {
 			log.Fatalf("Fetching UWYO: %s", err)
 		}
 		for _, table := range tables {
-			path := outputPath("uwyo", strconv.Itoa(station), table.Time)
+			path := outputPath("uwyo", strconv.Itoa(station), table.Time.In(timezone))
 			mustEncodeJson(path, table)
 			paths = append(paths, path)
 
 			// Update index
-			index.UWYOStart = timeMin(index.UWYOStart, table.Time)
-			index.UWYOEnd = timeMax(index.UWYOEnd, table.Time)
+			index.UWYOStart = timeMin(index.UWYOStart, table.Time.In(timezone))
+			index.UWYOEnd = timeMax(index.UWYOEnd, table.Time.In(timezone))
 			log.Printf("Wrote UWYO file %s", path)
 		}
 	}
