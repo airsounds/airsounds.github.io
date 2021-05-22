@@ -146,7 +146,7 @@ func parseHeader(s string) (time.Time, error) {
 		return time.Time{}, fmt.Errorf("didn't find 'at' in: %s", s)
 	}
 	s = s[i+4:]
-	t, err := time.Parse("15Z 02 Jan 2006", s)
+	t, err := time.Parse("15Z 02 Jan 2006 MST", s+" IDT")
 	if err != nil {
 		return t, err
 	}
