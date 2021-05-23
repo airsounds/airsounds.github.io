@@ -150,7 +150,6 @@ func parseHeader(s string) (time.Time, error) {
 	if err != nil {
 		return t, err
 	}
-	log.Printf("DEBUG: UWYO parsed time %q as %s", s, t)
 	return t, nil
 }
 
