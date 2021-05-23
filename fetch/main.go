@@ -128,14 +128,14 @@ func runNOAA() (paths []string) {
 			log.Fatalf("Fetching NOAA for %s: %s", loc.Name, err)
 		}
 		for _, n := range ns {
-			path := outputPath("noaa", loc.Name, n.Time.In(timezone))
+			path := outputPath("noaa", loc.Name, n.Time)
 			mustEncodeJson(path, n)
 			paths = append(paths, path)
 
 			// Update index
 			index.NoaaLastUpdate = time.Now().In(timezone)
-			index.NoaaStart = timeMin(index.NoaaStart, n.Time.In(timezone))
-			index.NoaaEnd = timeMax(index.NoaaEnd, n.Time.In(timezone))
+			index.NoaaStart = timeMin(index.NoaaStart, n.Time).In(timezone)
+			index.NoaaEnd = timeMax(index.NoaaEnd, n.Time).In(timezone)
 			log.Printf("Wrote NOAA forcast file %s", path)
 		}
 	}
@@ -159,13 +159,13 @@ func runIMS() (paths []string) {
 		}
 
 		for _, f := range i.Forecast {
-			path := outputPath("ims", name, f.Time.Time.In(timezone))
+			path := outputPath("ims", name, f.Time.Time)
 			mustEncodeJson(path, f)
 			paths = append(paths, path)
 
 			// Update index
-			index.IMSStart = timeMin(index.IMSStart, f.Time.Time.In(timezone))
-			index.IMSEnd = timeMax(index.IMSEnd, f.Time.Time.In(timezone))
+			index.IMSStart = timeMin(index.IMSStart, f.Time.Time).In(timezone)
+			index.IMSEnd = timeMax(index.IMSEnd, f.Time.Time).In(timezone)
 			log.Printf("Wrote IMS forcast file %s", path)
 		}
 	}
@@ -176,18 +176,18 @@ func runIMS() (paths []string) {
 
 func runUWYO() (paths []string) {
 	for _, station := range collectStations() {
-		tables, err := uwyo.Fetch(station, time.Now().In(timezone))
+		tables, err := uwyo.Fetch(station, time.Now())
 		if err != nil {
 			log.Fatalf("Fetching UWYO: %s", err)
 		}
 		for _, table := range tables {
-			path := outputPath("uwyo", strconv.Itoa(station), table.Time.In(timezone))
+			path := outputPath("uwyo", strconv.Itoa(station), table.Time)
 			mustEncodeJson(path, table)
 			paths = append(paths, path)
 
 			// Update index
-			index.UWYOStart = timeMin(index.UWYOStart, table.Time.In(timezone))
-			index.UWYOEnd = timeMax(index.UWYOEnd, table.Time.In(timezone))
+			index.UWYOStart = timeMin(index.UWYOStart, table.Time).In(timezone)
+			index.UWYOEnd = timeMax(index.UWYOEnd, table.Time).In(timezone)
 			log.Printf("Wrote UWYO file %s", path)
 		}
 	}
@@ -195,7 +195,7 @@ func runUWYO() (paths []string) {
 }
 
 func outputPath(sourceName, locationName string, t time.Time) string {
-	return filepath.Join(dataDir, t.Format("2006/01/02/15"), fmt.Sprintf("%s-%s.json", sourceName, locationName))
+	return filepath.Join(dataDir, t.In(timezone).Format("2006/01/02/15"), fmt.Sprintf("%s-%s.json", sourceName, locationName))
 }
 
 func mustDecodeJson(path string, data interface{}) {
