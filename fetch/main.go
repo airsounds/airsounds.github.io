@@ -182,7 +182,6 @@ func runUWYO() (paths []string) {
 		}
 		for _, table := range tables {
 			path := outputPath("uwyo", strconv.Itoa(station), table.Time)
-			log.Printf("DEBUG time %v with path %q", table.Time, path)
 			mustEncodeJson(path, table)
 			paths = append(paths, path)
 

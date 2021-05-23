@@ -16,6 +16,8 @@ import (
 
 const soundingURL = "http://weather.uwyo.edu/cgi-bin/sounding"
 
+var timezone, _ = time.LoadLocation("Asia/Jerusalem")
+
 // UWYO forcast information.
 type UWYO struct {
 	// Time of Forecast
@@ -146,7 +148,7 @@ func parseHeader(s string) (time.Time, error) {
 		return time.Time{}, fmt.Errorf("didn't find 'at' in: %s", s)
 	}
 	s = s[i+4:]
-	t, err := time.Parse("15Z 02 Jan 2006 MST", s+" IDT")
+	t, err := time.ParseInLocation("15Z 02 Jan 2006", s, timezone)
 	if err != nil {
 		return t, err
 	}
