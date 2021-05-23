@@ -133,7 +133,7 @@ func runNOAA() (paths []string) {
 			paths = append(paths, path)
 
 			// Update index
-			index.NoaaLastUpdate = time.Now()
+			index.NoaaLastUpdate = time.Now().In(timezone)
 			index.NoaaStart = timeMin(index.NoaaStart, n.Time.In(timezone))
 			index.NoaaEnd = timeMax(index.NoaaEnd, n.Time.In(timezone))
 			log.Printf("Wrote NOAA forcast file %s", path)
@@ -176,7 +176,7 @@ func runIMS() (paths []string) {
 
 func runUWYO() (paths []string) {
 	for _, station := range collectStations() {
-		tables, err := uwyo.Fetch(station, time.Now())
+		tables, err := uwyo.Fetch(station, time.Now().In(timezone))
 		if err != nil {
 			log.Fatalf("Fetching UWYO: %s", err)
 		}
