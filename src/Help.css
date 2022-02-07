@@ -1,0 +1,23 @@
+.Transparent {
+  background-color: rgba(0,0,0,0.5);
+}
+
+.fullscreen {
+  display: none; /* Hidden by default */
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.5);
+  padding: 12px;
+  cursor: pointer; /* Add a pointer on hover */
+}
+
+.p .rtl {
+  float: right;
+  direction: rtl;
+}
