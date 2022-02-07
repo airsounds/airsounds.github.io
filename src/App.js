@@ -61,7 +61,10 @@ export default function App() {
           </Navbar.Brand>
           {
             dateFormat(time) < dateFormat(new Date()) &&
-            <Nav.Link href="#" onClick={() => setTime(noonToday())}>Today</Nav.Link>
+            <Nav.Link href="#" onClick={() => {
+              setTime(noonToday());
+              setData(null);
+            }}>Today</Nav.Link>
           }
           <NavDropdown title={placeNameTranslate.get(place)} id="collasible-nav-dropdown">
             {
