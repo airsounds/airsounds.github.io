@@ -1,6 +1,6 @@
 import './App.css';
 import { useEffect, useState } from 'react';
-import { Navbar, Container, NavDropdown, Nav } from 'react-bootstrap';
+import { Navbar, Container, NavDropdown, Nav, Image } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Timeline from './Timeline';
 import Sounding from './Sounding';
@@ -56,7 +56,7 @@ export default function App() {
       <Navbar expand="lg" bg="light">
         <Container>
           <Navbar.Brand href="#" onClick={() => setHelpShown(true)}>
-            <img src="/logo.png" width="24" height="24" className="d-inline-block align-top" alt="logo" />
+            <Image src="/logo.png" width="24" height="24" className="d-inline-block" alt="logo" />
             {' '}Airsounds
           </Navbar.Brand>
           {
@@ -91,7 +91,9 @@ export default function App() {
       {
         data != null && (
           <>
-            <Timeline data={data[place]} time={time} setTime={setTime} />
+            <Container fluid className="TimelineContainer">
+              <Timeline data={data[place]} time={time} setTime={setTime} />
+            </Container>
             <Sounding data={data[place]} time={time} setError={setError} />
           </>
         )

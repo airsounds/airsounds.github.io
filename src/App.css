@@ -22,6 +22,10 @@
   color: white;
 }
 
+.TimelineContainer {
+  overflow-x: scroll;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
