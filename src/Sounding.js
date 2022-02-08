@@ -1,7 +1,7 @@
 import React from 'react';
 import useD3 from './hooks/useD3';
 import * as d3 from 'd3';
-import { altMax, tempMax, windMax, dateFormat, hourFormat, xTick, yTick, y } from './utils';
+import { altMax, tempMax, windMax, dateFormat, hourFormat, xTick, yTick, y, colors } from './utils';
 
 export default function Sounding({ data, time, setError }) {
     const ref = useD3(({ svg, rect }) => {
@@ -193,7 +193,7 @@ export default function Sounding({ data, time, setError }) {
                 .datum(d)
                 .attr("points", pts => pts.map(p => p.join(",")).join(" "))
                 .attr("fill", color)
-                .attr('opacity', 0.2)
+                .attr('opacity', 0.3)
                 .attr("stroke", color)
                 .attr("stroke-width", width)
                 .attr("stroke-linejoin", "round")
@@ -228,7 +228,7 @@ export default function Sounding({ data, time, setError }) {
                 [tempRange[1], virtual.h0],
                 [tempRange[0], virtual.h0],
             ],
-            "#D2691E", 1.5)
+            colors.ground, 1.5)
         drawText(select('.altLabel'), tempRange[1], virtual.h0, `Alt: ${virtual.h0} ft`,
             { valign: 'top', halign: 'start' })
 
@@ -276,7 +276,7 @@ export default function Sounding({ data, time, setError }) {
                 [tempRange[0], y(tempRange[0], virtual.t0, virtual.h0)],
 
             ],
-            "red", 0
+            colors.tempDiagonal, 0
         );
         drawPoint(select('.virtualT0'), virtual.t0, virtual.h0, "red");
         drawText(select('.virtualT0Label'), virtual.t0, virtual.h0, "T0: " + virtual.t0 + "ºC",
@@ -299,7 +299,7 @@ export default function Sounding({ data, time, setError }) {
                 [tempRange[1], virtual.TIM3],
                 [tempRange[0], virtual.TIM3]
             ],
-            "blue", 0
+            colors.virtTI, 0
         );
         if (virtual.TI !== virtual.h0) {
             drawText(select('.virtualTILabel'), tempRange[1], virtual.TI, "TI (virt): " + virtual.TI.toFixed(0) + "ft",
@@ -318,7 +318,7 @@ export default function Sounding({ data, time, setError }) {
                     [tempRange[1], measured.TIM3],
                     [tempRange[0], measured.TIM3]
                 ],
-                "green", 0
+                colors.measuredTI, 0
             )
             if (measured.TI !== virtual.h0) {
                 drawText(select('measuredTILabel'), tempRange[1], measured.TI, "TI (measured): " + measured.TI.toFixed(0) + "ft",
@@ -337,7 +337,7 @@ export default function Sounding({ data, time, setError }) {
                 drawLine(
                     select('.virtualCloudBase'),
                     tempRange, [vcloudBaseY, vcloudBaseY],
-                    { color: "blue", duration: 500 })
+                    { color: colors.cloudBase, duration: 500 })
             }
             drawText(select('.virtCloudBaseLabel'), tempRange[1], vcloudBaseY, "Cloud base (virt): " + virtual.cloudBase.toFixed(0) + "ft",
                 { halign: 'start' })
@@ -349,7 +349,7 @@ export default function Sounding({ data, time, setError }) {
                 drawLine(
                     select('.measuredCloudBase'),
                     tempRange, [mcloudBaseY, mcloudBaseY],
-                    { color: "blue", duration: 500, dashed: true })
+                    { color: colors.cloudBase, duration: 500, dashed: true })
             }
             drawText(select('.measuredCloudBaseLabel'), tempRange[1], mcloudBaseY, "Cloud base (measured): " + measured.cloudBase.toFixed(0) + "ft",
                 { halign: 'start' })

@@ -37,6 +37,17 @@ const weekdayName = new Map([
     [6, 'Sat'],
 ]);
 
+export const colors = {
+    virtTI: '#4BC9FF',
+    measuredTI: '#58CF3F',
+    tempDiagonal: '#FD6B6B',
+    bad: '#BF1818',
+    good: '#21BF18',
+    cloudBase: '#2687DC',
+    ground: '#FDB84E',
+    selected: '#DFFD4E',
+}
+
 export function dateTimeURLFormat(d) {
     if (!d) {
         return null;

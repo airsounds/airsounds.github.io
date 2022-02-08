@@ -1,7 +1,7 @@
 import React from 'react';
 import useD3 from './hooks/useD3';
 import * as d3 from 'd3';
-import { dateFormatPlotDay, altMax, tempMax, dateTimeURLFormat, hourFormat, plotHours } from './utils';
+import { dateFormatPlotDay, altMax, tempMax, dateTimeURLFormat, hourFormat, plotHours, colors } from './utils';
 
 export default function Timeline({ data, time, setTime }) {
     const ref = useD3(({ svg, rect }) => {
@@ -175,9 +175,8 @@ export default function Timeline({ data, time, setTime }) {
                 .attr('x', yTicksTextShift)));
 
         svg.select(".Ground").datum(samples)
-            .attr("fill", "#D2691E")
-            .attr("stroke", "#D2691E")
-            .attr("stroke-width", 1)
+            .attr("fill", colors.ground)
+            .attr("stroke-width", 0)
             .attr('opacity', 0.5)
             .attr("d", d3.area()
                 .defined(s => s.virtual?.TI && s.virtual?.TIM3)
@@ -201,10 +200,9 @@ export default function Timeline({ data, time, setTime }) {
         svg
             .select(".TIVirt")
             .datum(samples)
-            .attr("fill", "blue")
-            .attr("stroke", "blue")
-            .attr("stroke-width", 1)
-            .attr('opacity', 0.2)
+            .attr("fill", colors.virtTI)
+            .attr("stroke-width", 0)
+            .attr('opacity', 0.3)
             .attr("clip-path", "url(#DaysGraphPath)")
             .attr("d", d3.area()
                 .defined(s => s.virtual?.TI && s.virtual?.TIM3)
@@ -215,10 +213,9 @@ export default function Timeline({ data, time, setTime }) {
         svg
             .select(".TIMeasured")
             .datum(samples)
-            .attr("fill", "green")
-            .attr("stroke", "#69b3a2")
-            .attr("stroke-width", 1)
-            .attr('opacity', 0.2)
+            .attr("fill", colors.measuredTI)
+            .attr("stroke-width", 0)
+            .attr('opacity', 0.3)
             .attr("clip-path", "url(#DaysGraphPath)")
             .attr("d", d3.area()
                 .defined(s => s?.measured?.TI && s?.measured?.TIM3)
@@ -230,7 +227,7 @@ export default function Timeline({ data, time, setTime }) {
             .select(".CloudBaseVirtual")
             .datum(samples)
             .attr("fill", "none")
-            .attr("stroke", "steelblue")
+            .attr("stroke", colors.cloudBase)
             .attr("stroke-width", 0.5)
             .attr("clip-path", "url(#DaysGraphPath)")
             .attr("d", d3.line()
@@ -242,7 +239,7 @@ export default function Timeline({ data, time, setTime }) {
             .select(".CloudBaseMeasured")
             .datum(samples)
             .attr("fill", "none")
-            .attr("stroke", "steelblue")
+            .attr("stroke", colors.cloudBase)
             .attr("stroke-width", 0.5)
             .attr("clip-path", "url(#DaysGraphPath)")
             .attr("stroke-dasharray", "4,4")
@@ -292,9 +289,8 @@ export default function Timeline({ data, time, setTime }) {
         svg
             .select(".TrigVirtGood")
             .datum(samples)
-            .attr("fill", "green")
-            .attr("stroke", "green")
-            .attr("stroke-width", 0.5)
+            .attr("fill", colors.good)
+            .attr("stroke-width", 0)
             .attr('opacity', 0.2)
             .attr("clip-path", "url(#AboveTemp)")
             .attr("d", d3.area()
@@ -307,9 +303,8 @@ export default function Timeline({ data, time, setTime }) {
         svg
             .select(".TrigMeasuredGood")
             .datum(samples)
-            .attr("fill", "green")
-            .attr("stroke", "green")
-            .attr("stroke-width", 0.5)
+            .attr("fill", colors.good)
+            .attr("stroke-width", 0)
             .attr('opacity', 0.2)
             .attr("clip-path", "url(#AboveTemp)")
             .attr("d", d3.area()
@@ -322,9 +317,8 @@ export default function Timeline({ data, time, setTime }) {
         svg
             .select(".TrigVirtBad")
             .datum(samples)
-            .attr("fill", "red")
-            .attr("stroke", "red")
-            .attr("stroke-width", 0.5)
+            .attr("fill", colors.bad)
+            .attr("stroke-width", 0)
             .attr('opacity', 0.2)
             .attr("clip-path", "url(#BelowTemp)")
             .attr("d", d3.area()
@@ -373,14 +367,14 @@ export default function Timeline({ data, time, setTime }) {
                 .attr("y", dayLabelOffset + 3)
                 .attr("width", hourWidth)
                 .attr("height", plotArea.y[0] - plotArea.y[1] + dayLabelOffset + 4)
-                .attr("fill", "#FFD280")
+                .attr("fill", colors.selected)
                 .attr("stroke", "black")
                 .attr("stroke-width", 1)
                 .attr("rx", 3)
                 .attr("ry", 3)
                 .attr('opacity', opacity);
             button.on('click', () => setTime(s.t));
-            button.on('mouseover', () => button.attr('opacity', 0.1));
+            button.on('mouseover', () => button.attr('opacity', selected ? opacity : 0.1));
             button.on('mouseout', () => button.attr('opacity', opacity));
         });
     }, [data, time]);
