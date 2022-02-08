@@ -269,6 +269,7 @@ export default function Timeline({ data, time, setTime }) {
             .datum(samples)
             .attr("id", 'BelowTemp')
             .append("path")
+            .attr("clip-path", "url(#DaysGraphPath)")
             .attr("d", d3.area()
                 .defined(s => s.virtual?.t0)
                 .x((s, i) => tScale(i))
@@ -280,6 +281,7 @@ export default function Timeline({ data, time, setTime }) {
             .datum(samples)
             .attr("id", 'AboveTemp')
             .append("path")
+            .attr("clip-path", "url(#DaysGraphPath)")
             .attr("d", d3.area()
                 .defined(s => s.virtual?.t0)
                 .x((s, i) => tScale(i))
@@ -294,13 +296,27 @@ export default function Timeline({ data, time, setTime }) {
             .attr("stroke", "green")
             .attr("stroke-width", 0.5)
             .attr('opacity', 0.2)
-            .attr("clip-path", "url(#AboveTermp)")
-            .attr("clip-path", "url(#DaysGraphPath)")
+            .attr("clip-path", "url(#AboveTemp)")
             .attr("d", d3.area()
                 .defined(s => s.virtual?.trig && s.virtual?.t0)
                 .x((s, i) => tScale(i))
                 .y0(s => tempScale(s.virtual.t0))
                 .y1(s => tempScale(s.virtual.trig))
+            );
+
+        svg
+            .select(".TrigMeasuredGood")
+            .datum(samples)
+            .attr("fill", "green")
+            .attr("stroke", "green")
+            .attr("stroke-width", 0.5)
+            .attr('opacity', 0.2)
+            .attr("clip-path", "url(#AboveTemp)")
+            .attr("d", d3.area()
+                .defined(s => s.measured?.trig && s.measured?.t0)
+                .x((s, i) => tScale(i))
+                .y0(s => tempScale(s.measured.t0))
+                .y1(s => tempScale(s.measured.trig))
             );
 
         svg
@@ -311,7 +327,6 @@ export default function Timeline({ data, time, setTime }) {
             .attr("stroke-width", 0.5)
             .attr('opacity', 0.2)
             .attr("clip-path", "url(#BelowTemp)")
-            .attr("clip-path", "url(#DaysGraphPath)")
             .attr("d", d3.area()
                 .defined(s => s.virtual?.trig && s.virtual?.t0)
                 .x((s, i) => tScale(i))
@@ -338,6 +353,7 @@ export default function Timeline({ data, time, setTime }) {
             .attr("fill", "none")
             .attr("stroke", "blue")
             .attr("stroke-width", 0.5)
+            .attr("clip-path", "url(#DaysGraphPath)")
             .attr("stroke-dasharray", "4,4")
             .attr("d", d3.line()
                 .defined(s => s.measured?.trig)
@@ -392,6 +408,7 @@ export default function Timeline({ data, time, setTime }) {
             <path className="CloudBaseMeasured" />
             <path className="TrigVirtGood" />
             <path className="TrigVirtBad" />
+            <path className="TrigMeasuredGood" />
             <path className="TrigVirt" />
             <path className="TrigMeasured" />
             <path className="Temp" />
