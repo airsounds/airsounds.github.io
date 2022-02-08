@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as d3 from 'd3';
 
-export const useD3 = (renderFn, deps) => {
+export default function useD3(renderFn, deps) {
     const ref = React.useRef();
     const [rect, setRect] = useState(null);
 
@@ -27,7 +27,7 @@ export const useD3 = (renderFn, deps) => {
 
     deps.push(rect)
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (rect) {
             renderFn({ svg: d3.select(ref.current), rect: rect });
         }

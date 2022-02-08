@@ -1,5 +1,5 @@
 import React from 'react';
-import { useD3 } from './hooks/useD3';
+import useD3 from './hooks/useD3';
 import * as d3 from 'd3';
 import { altMax, tempMax, windMax, dateFormat, hourFormat, xTick, yTick, y } from './utils';
 
