@@ -353,13 +353,15 @@ export default function Timeline({ data, time, setTime }) {
             const button = svg
                 .append("rect")
                 .attr("class", "buttons")
-                .attr("x", tScale(i) - hourWidth / 2 + 1)
+                .attr("x", tScale(i) - hourWidth / 2)
                 .attr("y", dayLabelOffset + 3)
-                .attr("width", hourWidth - 2)
+                .attr("width", hourWidth)
                 .attr("height", plotArea.y[0] - plotArea.y[1] + dayLabelOffset + 4)
-                .attr("fill", "blue")
+                .attr("fill", "#FFD280")
                 .attr("stroke", "black")
                 .attr("stroke-width", 1)
+                .attr("rx", 3)
+                .attr("ry", 3)
                 .attr('opacity', opacity);
             button.on('click', () => setTime(s.t));
             button.on('mouseover', () => button.attr('opacity', 0.1));
