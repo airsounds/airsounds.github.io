@@ -1,7 +1,7 @@
 import React from 'react';
 import { useD3 } from './hooks/useD3';
 import * as d3 from 'd3';
-import { dateFormatPlotDay, altMax, tempMax, dateTimeURLFormat, hourFormat } from './utils';
+import { dateFormatPlotDay, altMax, tempMax, dateTimeURLFormat, hourFormat, plotHours } from './utils';
 
 export default function Timeline({ data, time, setTime }) {
     const ref = useD3(({ svg, rect }) => {
@@ -28,9 +28,10 @@ export default function Timeline({ data, time, setTime }) {
                 }));
         console.log('samples', samples);
         const n = samples.length;
-        const days = samples.map(s => `${dateFormatPlotDay(s.t)}`);
-        const hours = samples.map(s => `${hourFormat(s.t)}`);
-        const dayStart = hours.map(h => parseInt(h) === 10); // TODO: take 10 from utils.js.
+        const days = samples.map(s => dateFormatPlotDay(s.t));
+        const hours = samples.map(s => hourFormat(s.t));
+        const dayStart = hours.map(h => parseInt(h) === plotHours[0]);
+        const dayEnd = hours.map(h => parseInt(h) === plotHours[plotHours.length - 1]);
 
         const margin = { top: 36, right: 5, bottom: 5, left: 30 };
         const plotArea = {
@@ -183,6 +184,20 @@ export default function Timeline({ data, time, setTime }) {
                 .x((s, i) => tScale(i))
                 .y0(s => altScale(s.virtual.h0 > 0 ? 0 : s.virtual.h0 - 10))
                 .y1(s => altScale(s.virtual.h0)));
+
+        // A path for cliping graphs between days.
+        select(".DaysGraphPath")
+            .datum(samples.flatMap((s, i) =>
+                dayStart[i] ? [{ i, v: rect.height }, { i, v: 0 }]
+                    : dayEnd[i] ? [{ i, v: 0 }, { i, v: rect.height }] : []))
+            .attr("id", 'DaysGraphPath')
+            .append("path")
+            .attr("d", d3.area()
+                .x(s => tScale(s.i))
+                .y0(rect.height)
+                .y1(s => s.v)
+            );
+
         svg
             .select(".TIVirt")
             .datum(samples)
@@ -190,6 +205,7 @@ export default function Timeline({ data, time, setTime }) {
             .attr("stroke", "blue")
             .attr("stroke-width", 1)
             .attr('opacity', 0.2)
+            .attr("clip-path", "url(#DaysGraphPath)")
             .attr("d", d3.area()
                 .defined(s => s.virtual?.TI && s.virtual?.TIM3)
                 .x((s, i) => tScale(i))
@@ -203,6 +219,7 @@ export default function Timeline({ data, time, setTime }) {
             .attr("stroke", "#69b3a2")
             .attr("stroke-width", 1)
             .attr('opacity', 0.2)
+            .attr("clip-path", "url(#DaysGraphPath)")
             .attr("d", d3.area()
                 .defined(s => s?.measured?.TI && s?.measured?.TIM3)
                 .x((s, i) => tScale(i))
@@ -215,6 +232,7 @@ export default function Timeline({ data, time, setTime }) {
             .attr("fill", "none")
             .attr("stroke", "steelblue")
             .attr("stroke-width", 0.5)
+            .attr("clip-path", "url(#DaysGraphPath)")
             .attr("d", d3.line()
                 .defined(s => s.virtual?.cloudBase)
                 .x((s, i) => tScale(i))
@@ -226,6 +244,7 @@ export default function Timeline({ data, time, setTime }) {
             .attr("fill", "none")
             .attr("stroke", "steelblue")
             .attr("stroke-width", 0.5)
+            .attr("clip-path", "url(#DaysGraphPath)")
             .attr("stroke-dasharray", "4,4")
             .attr("d", d3.line()
                 .defined(s => s.measured?.cloudBase)
@@ -239,6 +258,7 @@ export default function Timeline({ data, time, setTime }) {
             .attr("fill", "none")
             .attr("stroke", "red")
             .attr("stroke-width", 0.5)
+            .attr("clip-path", "url(#DaysGraphPath)")
             .attr("d", d3.line()
                 .defined(s => s.virtual?.t0)
                 .x((s, i) => tScale(i))
@@ -275,6 +295,7 @@ export default function Timeline({ data, time, setTime }) {
             .attr("stroke-width", 0.5)
             .attr('opacity', 0.2)
             .attr("clip-path", "url(#AboveTermp)")
+            .attr("clip-path", "url(#DaysGraphPath)")
             .attr("d", d3.area()
                 .defined(s => s.virtual?.trig && s.virtual?.t0)
                 .x((s, i) => tScale(i))
@@ -290,6 +311,7 @@ export default function Timeline({ data, time, setTime }) {
             .attr("stroke-width", 0.5)
             .attr('opacity', 0.2)
             .attr("clip-path", "url(#BelowTemp)")
+            .attr("clip-path", "url(#DaysGraphPath)")
             .attr("d", d3.area()
                 .defined(s => s.virtual?.trig && s.virtual?.t0)
                 .x((s, i) => tScale(i))
@@ -303,6 +325,7 @@ export default function Timeline({ data, time, setTime }) {
             .attr("fill", "none")
             .attr("stroke", "blue")
             .attr("stroke-width", 0.5)
+            .attr("clip-path", "url(#DaysGraphPath)")
             .attr("d", d3.line()
                 .defined(s => s.virtual?.trig)
                 .x((s, i) => tScale(i))
@@ -330,7 +353,7 @@ export default function Timeline({ data, time, setTime }) {
             const button = svg
                 .append("rect")
                 .attr("class", "buttons")
-                .attr("x", tScale(i) - hourWidth / 2)
+                .attr("x", tScale(i) - hourWidth / 2 + 1)
                 .attr("y", dayLabelOffset + 3)
                 .attr("width", hourWidth - 2)
                 .attr("height", plotArea.y[0] - plotArea.y[1] + dayLabelOffset + 4)
@@ -357,6 +380,7 @@ export default function Timeline({ data, time, setTime }) {
             <g className="daysAxis" />
             <g className="altAxis" />
             <g className="tempAxis" />
+            <clipPath className="DaysGraphPath" />
             <clipPath className="AboveTemp" />
             <clipPath className="BelowTemp" />
             <path className="Ground" />

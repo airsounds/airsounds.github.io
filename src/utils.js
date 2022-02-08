@@ -7,6 +7,8 @@ export const tempMax = 50; // Temperatures range.
 export const altMax = 10000; // Altitude range.
 export const windMax = 30; // Wind speed range.
 
+export const plotHours = [10, 11, 12, 13, 14, 15, 16];
+
 export function pad(n) {
     return n < 10 ? '0' + n : n;
 }

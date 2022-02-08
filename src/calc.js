@@ -1,6 +1,4 @@
-import { max, min, limitsText, intersect, x, altMax, M, altTrigger, yTick } from './utils';
-
-const hours = [10, 11, 12, 13, 14, 15, 16];
+import { max, min, limitsText, intersect, x, altMax, M, altTrigger, yTick, plotHours } from './utils';
 
 // Returns map of place to date to date data, which includes hours which is hour to hour data.
 export default async function calc(index, days) {
@@ -21,7 +19,7 @@ export default async function calc(index, days) {
     const data = {};
     days.forEach(day => {
         Object.entries(day.hours).forEach(([hour, places]) => {
-            if (!hours.includes(parseInt(hour))) {
+            if (!plotHours.includes(parseInt(hour))) {
                 return;
             }
             Object.entries(places).forEach(([place, sources]) => {
