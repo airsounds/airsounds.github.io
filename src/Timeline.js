@@ -33,7 +33,7 @@ export default function Timeline({ data, time, setTime }) {
         const dayStart = hours.map(h => parseInt(h) === plotHours[0]);
         const dayEnd = hours.map(h => parseInt(h) === plotHours[plotHours.length - 1]);
 
-        const margin = { top: 36, right: 5, bottom: 5, left: 30 };
+        const margin = { top: 36, right: 5, bottom: 5, left: 20 };
         const plotArea = {
             x: [margin.left, margin.left + rect.width - margin.right],
             y: [rect.height - margin.bottom, margin.top],
