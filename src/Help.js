@@ -1,4 +1,4 @@
-import { ListGroup, Modal } from 'react-bootstrap';
+import { Image, ListGroup, Modal } from 'react-bootstrap';
 
 export default function Help({ show, setShow }) {
     return (
@@ -19,6 +19,7 @@ export default function Help({ show, setShow }) {
                     בחלק התחתון ישנו פרוט הטכיגרמה עבור השעה שמסומנת בחלק העליון.
                     ניתן ללחץ בחלק העליון על שעה אחרת על מנת להציג את הפירוט עבורה בחלק התחתון.
                 </p>
+                <Image src="/timeline-legend.png" width="100%" style={{ 'max-width': '500px' }} />
                 <p className='card-text rtl'>
                     הגרף האדום מתאר את מפל הטמפרטורה היבש.
                     הגרף הכחול מתאר את מפל האוויר הרווי.
@@ -29,6 +30,7 @@ export default function Help({ show, setShow }) {
                     השטח האדום מתאר את מפל הטמפרטורה מהטמפרטורה המקסימלית החזויה לאותה שעה בגובה המדידה, ועד טמפרטורה הנמוכה ב 3 מעלות ממנה.
                     השטח החום מתאר את הקרקע.
                 </p>
+                <Image src="/sounding-legend.png" width="100%" style={{ 'max-width': '600px' }} />
                 <h5>מושגים</h5>
                 <ListGroup dir='ltr'>
                     <ListGroup.Item><b>T<small><b>0</b></small></b>: Grond level temperature.</ListGroup.Item>

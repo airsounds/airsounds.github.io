@@ -89,7 +89,7 @@ export default function App() {
         data == null && (
           <div className='App'>
             <header className='App-header'>
-              <img src='/logo.png' className='App-logo' alt='logo' />
+              <Image src='/logo.png' className='App-logo' alt='logo' />
             </header>
           </div>
         )
