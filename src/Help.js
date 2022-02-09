@@ -1,5 +1,3 @@
-import './Help.css';
-
 import { ListGroup, Modal } from 'react-bootstrap';
 
 export default function Help({ show, setShow }) {
@@ -15,13 +13,13 @@ export default function Help({ show, setShow }) {
                 <p >
                     באתר זה מוצגים נתוני בלון וירטואלי ונתוני טמפרטורה שנאספים מאתרים שונים.
                 </p>
-                <p className="card-text rtl">
+                <p className='card-text rtl'>
                     ניתן לבחור בתפריט העליון את המיקום אליו ניתנת התחזית
                     בחלק העליון של המסך ישנה תחזית לימים הקרובים.
                     בחלק התחתון ישנו פרוט הטכיגרמה עבור השעה שמסומנת בחלק העליון.
                     ניתן ללחץ בחלק העליון על שעה אחרת על מנת להציג את הפירוט עבורה בחלק התחתון.
                 </p>
-                <p className="card-text rtl">
+                <p className='card-text rtl'>
                     הגרף האדום מתאר את מפל הטמפרטורה היבש.
                     הגרף הכחול מתאר את מפל האוויר הרווי.
                     קו מלא מתאר תחזית בלון וירטואלי.
@@ -32,7 +30,7 @@ export default function Help({ show, setShow }) {
                     השטח החום מתאר את הקרקע.
                 </p>
                 <h5>מושגים</h5>
-                <ListGroup dir="ltr">
+                <ListGroup dir='ltr'>
                     <ListGroup.Item><b>T<small><b>0</b></small></b>: Grond level temperature.</ListGroup.Item>
                     <ListGroup.Item><b>TI (thermal index)</b>: Maximal theoretical flyable altitude. Based on T<small>0</small>.</ListGroup.Item>
                     <ListGroup.Item><b>TI-3 (thermal index - 3ºC)</b>: probable flyable altitude. Based on T<small>0</small> - 3ºC.</ListGroup.Item>

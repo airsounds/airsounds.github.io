@@ -31,6 +31,12 @@ export default function App() {
     const data = await calc(index, rawData);
     console.log('calculated', data);
     setData(data);
+
+    // Scroll timeline all the way to the left.
+    document.getElementById('timeline-container').scrollBy({
+      left: -window.innerWidth,
+      smooth: true,
+    })
   }
 
   // Keep query string aligned with viewed data.
@@ -53,20 +59,20 @@ export default function App() {
 
   return (
     <>
-      <Navbar expand="lg" bg="light">
+      <Navbar expand='lg' bg='light'>
         <Container>
-          <Navbar.Brand href="#" onClick={() => setHelpShown(true)}>
-            <Image src="/logo.png" width="24" height="24" className="d-inline-block" alt="logo" />
+          <Navbar.Brand href='#' onClick={() => setHelpShown(true)}>
+            <Image src='/logo.png' width='24' height='24' className='d-inline-block' alt='logo' />
             {' '}Airsounds
           </Navbar.Brand>
           {
             dateFormat(time) < dateFormat(new Date()) &&
-            <Nav.Link href="#" onClick={() => {
+            <Nav.Link href='#' onClick={() => {
               setTime(noonToday());
               setData(null);
             }}>Today</Nav.Link>
           }
-          <NavDropdown title={placeNameTranslate.get(place)} id="collasible-nav-dropdown">
+          <NavDropdown title={placeNameTranslate.get(place)} id='collasible-nav-dropdown'>
             {
               Array.from(placeNameTranslate.entries())
                 .filter(([en]) => en !== place)
@@ -81,9 +87,9 @@ export default function App() {
       </Navbar>
       {
         data == null && (
-          <div className="App">
-            <header className="App-header">
-              <img src="/logo.png" className="App-logo" alt="logo" />
+          <div className='App'>
+            <header className='App-header'>
+              <img src='/logo.png' className='App-logo' alt='logo' />
             </header>
           </div>
         )
@@ -91,7 +97,7 @@ export default function App() {
       {
         data != null && (
           <>
-            <Container fluid className="TimelineContainer">
+            <Container id='timeline-container' fluid className='TimelineContainer'>
               <Timeline data={data[place]} time={time} setTime={setTime} />
             </Container>
             <Sounding data={data[place]} time={time} setError={setError} />
@@ -108,10 +114,10 @@ export default function App() {
 
 const defaultPlace = 'megido';
 const placeNameTranslate = new Map([
-  ["megido", "מגידו"],
-  ["sde-teiman", "שדה תימן"],
-  ["zefat", "צפת"],
-  ["bet-shaan", "בית שאן"]
+  ['megido', 'מגידו'],
+  ['sde-teiman', 'שדה תימן'],
+  ['zefat', 'צפת'],
+  ['bet-shaan', 'בית שאן']
 ]);
 
 function initialTime(q) {

@@ -1,4 +1,5 @@
 import React from 'react';
+import "./App.css"
 import useD3 from './hooks/useD3';
 import * as d3 from 'd3';
 import { dateFormatPlotDay, altMax, tempMax, dateTimeURLFormat, hourFormat, plotHours, colors } from './utils';
@@ -379,15 +380,7 @@ export default function Timeline({ data, time, setTime }) {
         });
     }, [data, time]);
     return (
-        <svg
-            ref={ref}
-            style={{
-                height: '200px',
-                width: '100%',
-                marginRight: '0px',
-                marginLeft: '0px',
-            }}
-        >
+        <svg ref={ref} className="Timeline">
             <g className='hoursAxis' />
             <g className='daysAxis' />
             <g className='altAxis' />

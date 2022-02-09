@@ -23,7 +23,23 @@
 }
 
 .TimelineContainer {
-  overflow-x: scroll;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.Timeline {
+  height: 200px;
+  width: 100%;
+  min-width: 800px;
+  margin-right: 0px;
+  margin-left: 0px;
+}
+
+.Sounding {
+  height: 600px;
+  width: 100%;
+  margin-right: 0px;
+  margin-left: 0px;
 }
 
 @keyframes App-logo-spin {

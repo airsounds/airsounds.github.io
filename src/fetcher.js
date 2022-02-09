@@ -7,13 +7,13 @@ export async function fetchIndex(setError) {
     console.debug(`Fetching index...`);
     const indexResp = await fetch(`${prefix}/index.json`);
     if (!indexResp.ok) {
-        setError({ title: "Failed getting index", message: `Response: ${indexResp.status}` });
+        setError({ title: 'Failed getting index', message: `Response: ${indexResp.status}` });
         return;
     }
     try {
         return await indexResp.json();
     } catch (e) {
-        setError({ title: "Failed parsing index json", message: `Error: ${e}` });
+        setError({ title: 'Failed parsing index json', message: `Error: ${e}` });
     }
 }
 

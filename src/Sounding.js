@@ -2,6 +2,7 @@ import React from 'react';
 import useD3 from './hooks/useD3';
 import * as d3 from 'd3';
 import { altMax, tempMax, windMax, dateFormat, hourFormat, xTick, yTick, y, colors } from './utils';
+import "./App.css"
 
 export default function Sounding({ data, time, setError }) {
     const ref = useD3(({ svg, rect }) => {
@@ -429,16 +430,7 @@ export default function Sounding({ data, time, setError }) {
     }, [data, time]);
 
     return (
-        <svg
-            ref={ref}
-            className='Sounding'
-            style={{
-                height: '600px',
-                width: '100%',
-                marginRight: '0px',
-                marginLeft: '0px',
-            }}
-        >
+        <svg ref={ref} className='Sounding' >
             <clipPath className='clipPlotArea' id='clipPlotArea' />
             <g className='diagonalTicks' />
             <g className='altLabel' />
