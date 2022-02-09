@@ -15,7 +15,7 @@ export default function Sounding({ data, time, setError }) {
         const measured = dateTimeData.measured;
 
         if (!virtual && !measured) {
-            setError("No data", "for chosen time");
+            setError('No data', 'for chosen time');
             return;
         }
 
@@ -76,7 +76,7 @@ export default function Sounding({ data, time, setError }) {
 
         function drawLine(elem, x, y, params) {
             params = initParams(params, {
-                color: "black",
+                color: 'black',
                 width: 1,
                 duration: 0,
                 dashed: false,
@@ -95,11 +95,11 @@ export default function Sounding({ data, time, setError }) {
                 .y(d => d.y);
 
             function length(path) {
-                return d3.create("svg:path").attr("d", path).node().getTotalLength();
+                return d3.create('svg:path').attr('d', path).node().getTotalLength();
             }
 
             const l = length(line(points));
-            const dash = (params.dashed) ? "10" : `${l},${l}`;
+            const dash = (params.dashed) ? '10' : `${l},${l}`;
 
             if (params.arrowSize > 0) {
                 const size = params.arrowSize;
@@ -120,18 +120,18 @@ export default function Sounding({ data, time, setError }) {
 
             const path = elem.append('path')
                 .datum(points)
-                .attr("fill", "none")
-                .attr("stroke", params.color)
-                .attr("stroke-width", params.width)
-                .attr("stroke-linejoin", "round")
-                .attr("stroke-linecap", "round")
-                .attr("stroke-dasharray", `0,${l}`)
-                .attr("d", line)
+                .attr('fill', 'none')
+                .attr('stroke', params.color)
+                .attr('stroke-width', params.width)
+                .attr('stroke-linejoin', 'round')
+                .attr('stroke-linecap', 'round')
+                .attr('stroke-dasharray', `0,${l}`)
+                .attr('d', line)
                 .transition()
                 .duration(params.duration)
                 .ease(d3.easeLinear)
-                .attr("stroke-dasharray", dash)
-                .attr("clip-path", "url(#clipPlotArea)");
+                .attr('stroke-dasharray', dash)
+                .attr('clip-path', 'url(#clipPlotArea)');
             if (params.arrowSize > 0) {
                 path.attr('marker-end', 'url(#arrow)')
             }
@@ -140,45 +140,45 @@ export default function Sounding({ data, time, setError }) {
         function drawPoint(elem, x, y, color) {
             const point = [{ x: tempScale(x), y: altScale(y) }]
             elem.append('g')
-                .attr("fill", "white")
-                .attr("stroke", color)
-                .attr("stroke-width", 2)
-                .selectAll("circle")
+                .attr('fill', 'white')
+                .attr('stroke', color)
+                .attr('stroke-width', 2)
+                .selectAll('circle')
                 .data(point)
-                .join("circle")
-                .attr("cx", d => d.x)
-                .attr("cy", d => d.y)
-                .attr("r", 3);
+                .join('circle')
+                .attr('cx', d => d.x)
+                .attr('cy', d => d.y)
+                .attr('r', 3);
         }
 
         function drawText(elem, x, y, text, params) {
             params = initParams(params, {
                 xScale: tempScale,
                 size: 14,
-                color: "black",
+                color: 'black',
                 valign: 'middle', // top/bottom/middle.
                 halign: 'middle', // start/middle/end.
             })
 
             const point = [{ x: params.xScale(x), y: altScale(y) }]
-            const label = elem.append("g")
+            const label = elem.append('g')
             label
-                .attr("font-family", "sans-serif")
-                .attr("font-size", params.size)
-                .attr("font-color", params.color)
-                .selectAll("g")
+                .attr('font-family', 'sans-serif')
+                .attr('font-size', params.size)
+                .attr('font-color', params.color)
+                .selectAll('g')
                 .data(point)
-                .join("g")
-                .attr("transform", d => `translate(${d.x},${d.y})`)
-                .attr("opacity", 1)
-                .append("text")
+                .join('g')
+                .attr('transform', d => `translate(${d.x},${d.y})`)
+                .attr('opacity', 1)
+                .append('text')
                 .text(text)
                 .attr('text-anchor', params.halign)
                 .each(function (d) {
                     const t = d3.select(this);
                     switch (params.valign) {
-                        case "top": t.attr("dy", "1.2em"); break;
-                        case "bottom": t.attr("dy", "-0.7em"); break;
+                        case 'top': t.attr('dy', '1.2em'); break;
+                        case 'bottom': t.attr('dy', '-0.7em'); break;
                         default: break;
                     }
                 })
@@ -191,23 +191,23 @@ export default function Sounding({ data, time, setError }) {
             }
             elem.append('polygon')
                 .datum(d)
-                .attr("points", pts => pts.map(p => p.join(",")).join(" "))
-                .attr("fill", color)
+                .attr('points', pts => pts.map(p => p.join(',')).join(' '))
+                .attr('fill', color)
                 .attr('opacity', 0.3)
-                .attr("stroke", color)
-                .attr("stroke-width", width)
-                .attr("stroke-linejoin", "round")
-                .attr("stroke-linecap", "round")
+                .attr('stroke', color)
+                .attr('stroke-width', width)
+                .attr('stroke-linejoin', 'round')
+                .attr('stroke-linecap', 'round')
         }
 
         // Start drawing!
 
-        select(".clipPlotArea")
-            .append("rect")
-            .attr("x", tempPlotAreaX[0])
-            .attr("y", altPlotAreaY[1])
-            .attr("width", tempPlotAreaX[1] - tempPlotAreaX[0])
-            .attr("height", altPlotAreaY[0] - altPlotAreaY[1]);
+        select('.clipPlotArea')
+            .append('rect')
+            .attr('x', tempPlotAreaX[0])
+            .attr('y', altPlotAreaY[1])
+            .attr('width', tempPlotAreaX[1] - tempPlotAreaX[0])
+            .attr('height', altPlotAreaY[0] - altPlotAreaY[1]);
 
 
         // Draw diagonal ticks.
@@ -235,20 +235,20 @@ export default function Sounding({ data, time, setError }) {
         // Draw temperature graphs.
         if (virtual) {
             drawLine(select('.virtualTemp'), virtual.temp, virtual.alt,
-                { color: "red", width: 2 });
+                { color: 'red', width: 2 });
             drawLine(select('.virtaulDew'), virtual.dew, virtual.alt,
-                { color: "blue", width: 2 });
+                { color: 'blue', width: 2 });
         }
         if (measured) {
             drawLine(select('.measuredTemp'), measured.temp, measured.alt,
-                { color: "red", width: 2, dashed: true });
+                { color: 'red', width: 2, dashed: true });
             drawLine(select('.measuredDew'), measured.dew, measured.alt,
-                { color: "blue", width: 2, dashed: true });
+                { color: 'blue', width: 2, dashed: true });
         }
 
         // Draw wind
         drawLine(select('.virtualWindSpeed'), virtual.windSpeed, virtual.alt,
-            { color: "#444444", xScale: windScale })
+            { color: '#444444', xScale: windScale })
         const virtualWindElem = select('.virtualWindSpeedLabels')
         for (let i in virtual.windSpeed) {
             const dir = windDirName(virtual.windDir[i])
@@ -258,7 +258,7 @@ export default function Sounding({ data, time, setError }) {
         if (measured) {
             const measuredWindElem = select('.measuredWindSpeedLabels')
             drawLine(select('.measuredWindSpeed'), measured.windSpeed, measured.alt,
-                { color: "#444444", xScale: windScale, dashed: true })
+                { color: '#444444', xScale: windScale, dashed: true })
             for (let i in measured.windSpeed) {
                 const dir = windDirName(measured.windDir[i])
                 drawText(measuredWindElem, measured.windSpeed[i], measured.alt[i], measured.windSpeed[i] + dir,
@@ -278,15 +278,15 @@ export default function Sounding({ data, time, setError }) {
             ],
             colors.tempDiagonal, 0
         );
-        drawPoint(select('.virtualT0'), virtual.t0, virtual.h0, "red");
-        drawText(select('.virtualT0Label'), virtual.t0, virtual.h0, "T0: " + virtual.t0 + "ºC",
+        drawPoint(select('.virtualT0'), virtual.t0, virtual.h0, 'red');
+        drawText(select('.virtualT0Label'), virtual.t0, virtual.h0, 'T0: ' + virtual.t0 + 'ºC',
             { valign: 'top' })
 
         if (virtual.trig) {
             const color = (virtual.isTriggered) ? 'green' : 'red';
             drawLine(select('.trigger'), [virtual.t0, virtual.trig], [virtual.h0, virtual.h0],
                 { color: color, duration: 2500, arrowSize: 14 })
-            drawText(select('.triggerLabel'), virtual.trig, virtual.h0, "Trigger: " + virtual.trig.toFixed(1) + "ºC",
+            drawText(select('.triggerLabel'), virtual.trig, virtual.h0, 'Trigger: ' + virtual.trig.toFixed(1) + 'ºC',
                 { valign: 'top' })
         }
 
@@ -302,11 +302,11 @@ export default function Sounding({ data, time, setError }) {
             colors.virtTI, 0
         );
         if (virtual.TI !== virtual.h0) {
-            drawText(select('.virtualTILabel'), tempRange[1], virtual.TI, "TI (virt): " + virtual.TI.toFixed(0) + "ft",
+            drawText(select('.virtualTILabel'), tempRange[1], virtual.TI, 'TI (virt): ' + virtual.TI.toFixed(0) + 'ft',
                 { halign: 'start' })
         }
         if (virtual.TIM3 !== virtual.h0) {
-            drawText(select('.virtualTIM3Label'), tempRange[1], virtual.TIM3, "TI-3 (virt): " + virtual.TIM3.toFixed(0) + "ft",
+            drawText(select('.virtualTIM3Label'), tempRange[1], virtual.TIM3, 'TI-3 (virt): ' + virtual.TIM3.toFixed(0) + 'ft',
                 { halign: 'start' })
         }
         if (measured) {
@@ -321,11 +321,11 @@ export default function Sounding({ data, time, setError }) {
                 colors.measuredTI, 0
             )
             if (measured.TI !== virtual.h0) {
-                drawText(select('measuredTILabel'), tempRange[1], measured.TI, "TI (measured): " + measured.TI.toFixed(0) + "ft",
+                drawText(select('measuredTILabel'), tempRange[1], measured.TI, 'TI (measured): ' + measured.TI.toFixed(0) + 'ft',
                     { halign: 'start' })
             }
             if (measured.TIM3 !== virtual.h0) {
-                drawText(select('measuredTIM3Label'), tempRange[1], measured.TIM3, "TI-3 (measured): " + measured.TIM3.toFixed(0) + "ft",
+                drawText(select('measuredTIM3Label'), tempRange[1], measured.TIM3, 'TI-3 (measured): ' + measured.TIM3.toFixed(0) + 'ft',
                     { halign: 'start' })
             }
         }
@@ -339,7 +339,7 @@ export default function Sounding({ data, time, setError }) {
                     tempRange, [vcloudBaseY, vcloudBaseY],
                     { color: colors.cloudBase, duration: 500 })
             }
-            drawText(select('.virtCloudBaseLabel'), tempRange[1], vcloudBaseY, "Cloud base (virt): " + virtual.cloudBase.toFixed(0) + "ft",
+            drawText(select('.virtCloudBaseLabel'), tempRange[1], vcloudBaseY, 'Cloud base (virt): ' + virtual.cloudBase.toFixed(0) + 'ft',
                 { halign: 'start' })
         }
 
@@ -351,7 +351,7 @@ export default function Sounding({ data, time, setError }) {
                     tempRange, [mcloudBaseY, mcloudBaseY],
                     { color: colors.cloudBase, duration: 500, dashed: true })
             }
-            drawText(select('.measuredCloudBaseLabel'), tempRange[1], mcloudBaseY, "Cloud base (measured): " + measured.cloudBase.toFixed(0) + "ft",
+            drawText(select('.measuredCloudBaseLabel'), tempRange[1], mcloudBaseY, 'Cloud base (measured): ' + measured.cloudBase.toFixed(0) + 'ft',
                 { halign: 'start' })
         }
 
@@ -361,122 +361,122 @@ export default function Sounding({ data, time, setError }) {
         const windTicks = 5;
 
         // Alt axis.
-        select(".altAxis").call(g => g
-            .attr("transform", `translate(${margin.left},0)`)
-            .call(d3.axisLeft(altScale).ticks(altTicks, "s"))
-            .call(g => g.select(".domain").remove())
-            .call(g => g.selectAll(".tick line").clone()
-                .attr("x2", width - margin.right)
-                .attr("stroke-opacity", 0.2))
+        select('.altAxis').call(g => g
+            .attr('transform', `translate(${margin.left},0)`)
+            .call(d3.axisLeft(altScale).ticks(altTicks, 's'))
+            .call(g => g.select('.domain').remove())
+            .call(g => g.selectAll('.tick line').clone()
+                .attr('x2', width - margin.right)
+                .attr('stroke-opacity', 0.2))
             // Add axis label.
-            .call(g => g.select(".tick:last-of-type text").clone()
-                .attr("x", -5)
-                .attr("y", -20)
-                .attr("text-anchor", "start")
-                .attr("font-weight", "bold")
-                .attr("fill", "black")
-                .text("H[ft]")
+            .call(g => g.select('.tick:last-of-type text').clone()
+                .attr('x', -5)
+                .attr('y', -20)
+                .attr('text-anchor', 'start')
+                .attr('font-weight', 'bold')
+                .attr('fill', 'black')
+                .text('H[ft]')
                 .call(halo))
             .call(g => g
-                .selectAll("text")
+                .selectAll('text')
                 .style('font-size', '8px')
                 .attr('text-anchor', 'end')
                 .attr('x', -28)));
 
         // Temp axis.
-        select(".tempAxis").call(g => g
-            .attr("transform", `translate(0,${height - margin.bottom - 20})`)
+        select('.tempAxis').call(g => g
+            .attr('transform', `translate(0,${height - margin.bottom - 20})`)
             .call(d3.axisBottom(tempScale).ticks(tempTicks))
-            .call(g => g.select(".domain").remove())
-            .call(g => g.selectAll(".tick line").clone()
-                .attr("y2", -height)
-                .attr("stroke-opacity", 0.2))
+            .call(g => g.select('.domain').remove())
+            .call(g => g.selectAll('.tick line').clone()
+                .attr('y2', -height)
+                .attr('stroke-opacity', 0.2))
             // Add axis label.
-            .call(g => g.append("text")
-                .attr("x", tempPlotAreaX[1] + 12)
-                .attr("y", 15)
-                .attr("font-weight", "bold")
-                .attr("text-anchor", "end")
-                .attr("fill", "black")
-                .text("T[c]")
+            .call(g => g.append('text')
+                .attr('x', tempPlotAreaX[1] + 12)
+                .attr('y', 15)
+                .attr('font-weight', 'bold')
+                .attr('text-anchor', 'end')
+                .attr('fill', 'black')
+                .text('T[c]')
                 .call(halo)));
 
         // Wind axis.
-        select(".windAxis").call(g => g
-            .attr("transform", `translate(0,${height - margin.bottom})`)
+        select('.windAxis').call(g => g
+            .attr('transform', `translate(0,${height - margin.bottom})`)
             .call(d3.axisBottom(windScale).ticks(windTicks))
-            .call(g => g.select(".domain").remove())
-            .call(g => g.selectAll(".tick line").clone()
-                .attr("y2", -height)
-                .attr("stroke-opacity", 0.1))
+            .call(g => g.select('.domain').remove())
+            .call(g => g.selectAll('.tick line').clone()
+                .attr('y2', -height)
+                .attr('stroke-opacity', 0.1))
             // Add axis label.
-            .call(g => g.append("text")
-                .attr("x", windPlotAreaX[1] + 10)
-                .attr("y", 16)
-                .attr("font-weight", "bold")
-                .attr("text-anchor", "end")
-                .attr("fill", "black")
-                .text("Wind [kn]")
+            .call(g => g.append('text')
+                .attr('x', windPlotAreaX[1] + 10)
+                .attr('y', 16)
+                .attr('font-weight', 'bold')
+                .attr('text-anchor', 'end')
+                .attr('fill', 'black')
+                .text('Wind [kn]')
                 .call(halo)));
 
         function halo(text) {
             text.select(function () { return this.parentNode.insertBefore(this.cloneNode(true), this); })
-                .attr("fill", "none")
-                .attr("stroke", "white")
-                .attr("stroke-width", 4)
-                .attr("stroke-linejoin", "round");
+                .attr('fill', 'none')
+                .attr('stroke', 'white')
+                .attr('stroke-width', 4)
+                .attr('stroke-linejoin', 'round');
         }
     }, [data, time]);
 
     return (
         <svg
             ref={ref}
-            className="Sounding"
+            className='Sounding'
             style={{
-                height: "600px",
-                width: "100%",
-                marginRight: "0px",
-                marginLeft: "0px",
+                height: '600px',
+                width: '100%',
+                marginRight: '0px',
+                marginLeft: '0px',
             }}
         >
-            <clipPath className="clipPlotArea" id="clipPlotArea" />
-            <g className="diagonalTicks" />
-            <g className="altLabel" />
-            <g className="virtualT0Label" />
-            <g className="triggerLabel" />
-            <g className="tempAxis" />
-            <g className="altAxis" />
-            <g className="windAxis" />
-            <g className="virtualTILabel" />
-            <g className="virtualTIM3Label" />
-            <g className="measuredTILabel" />
-            <g className="measuredTIM3Label" />
-            <g className="virtCloudBaseLabel" />
-            <g className="measuredCloudBaseLabel" />
-            <g className="virtualWindSpeedLabels" />
-            <g className="measuredWindSpeedLabels" />
+            <clipPath className='clipPlotArea' id='clipPlotArea' />
+            <g className='diagonalTicks' />
+            <g className='altLabel' />
+            <g className='virtualT0Label' />
+            <g className='triggerLabel' />
+            <g className='tempAxis' />
+            <g className='altAxis' />
+            <g className='windAxis' />
+            <g className='virtualTILabel' />
+            <g className='virtualTIM3Label' />
+            <g className='measuredTILabel' />
+            <g className='measuredTIM3Label' />
+            <g className='virtCloudBaseLabel' />
+            <g className='measuredCloudBaseLabel' />
+            <g className='virtualWindSpeedLabels' />
+            <g className='measuredWindSpeedLabels' />
 
 
-            <g className="virtualTemp" />
-            <g className="virtualDue" />
-            <g className="measuredTemp" />
-            <g className="measuredDew" />
-            <g className="virtualWindSpeed" />
-            <g className="measuredWindSpeed" />
-            <g className="trigger" />
-            <g className="virtualCloudBase" />
-            <g className="measuredCloudBase" />
+            <g className='virtualTemp' />
+            <g className='virtualDue' />
+            <g className='measuredTemp' />
+            <g className='measuredDew' />
+            <g className='virtualWindSpeed' />
+            <g className='measuredWindSpeed' />
+            <g className='trigger' />
+            <g className='virtualCloudBase' />
+            <g className='measuredCloudBase' />
 
-            <g className="virtualT0" />
+            <g className='virtualT0' />
 
-            <g className="ground" />
-            <g className="maxTempDiagonal" />
-            <g className="virtualThermalIndex" />
-            <g className="measuredThermalIndex" />
-            <g className="TIVirtual" />
-            <g className="TIMeasured" />
-            <g className="CloudBase" />
-            <g className="Temp" />
+            <g className='ground' />
+            <g className='maxTempDiagonal' />
+            <g className='virtualThermalIndex' />
+            <g className='measuredThermalIndex' />
+            <g className='TIVirtual' />
+            <g className='TIMeasured' />
+            <g className='CloudBase' />
+            <g className='Temp' />
         </svg>
     );
 }

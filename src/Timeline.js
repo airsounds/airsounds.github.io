@@ -102,27 +102,27 @@ export default function Timeline({ data, time, setTime }) {
             .range(yTemp);
 
 
-        svg.select(".hoursAxis").call(g => g
-            .attr("transform", `translate(0,${plotArea.y[1]})`)
+        svg.select('.hoursAxis').call(g => g
+            .attr('transform', `translate(0,${plotArea.y[1]})`)
             .call(d3
                 .axisTop(tScale)
                 .ticks(n)
                 .tickFormat((d, i) => hours[i]))
-            .call(g => g.select(".domain").remove())
-            .call(g => g.selectAll(".tick line").remove())
+            .call(g => g.select('.domain').remove())
+            .call(g => g.selectAll('.tick line').remove())
             .call(g => g
-                .selectAll("text")
+                .selectAll('text')
                 .style('font-size', '8px')
                 .attr('text-anchor', 'middle')));
 
-        svg.select(".daysAxis").call(g => g
-            .attr("transform", `translate(0,${plotArea.y[1] - dayLabelOffset})`)
+        svg.select('.daysAxis').call(g => g
+            .attr('transform', `translate(0,${plotArea.y[1] - dayLabelOffset})`)
             .call(d3
                 .axisTop(tScale)
                 .ticks(n)
                 .tickFormat((d, i) => dayStart[i] ? days[i] : ''))
-            .call(g => g.select(".domain").remove())
-            .call(g => g.selectAll(".tick line")
+            .call(g => g.select('.domain').remove())
+            .call(g => g.selectAll('.tick line')
                 .attr('y1', -dayLabelOffset)
                 .attr('y2', plotArea.y[0] - plotArea.y[1] + dayLabelOffset)
                 .attr('x1', -hourWidth / 2)
@@ -142,144 +142,144 @@ export default function Timeline({ data, time, setTime }) {
         const altTicksN = Math.floor((altRange[1] - altRange[0]) / altTicks);
         const tempTicksN = Math.floor((tempRange[1] - tempRange[0]) / tempTicks);
 
-        svg.select(".altAxis").call(g => g
-            .attr("transform", `translate(${plotArea.x[0]},0)`)
+        svg.select('.altAxis').call(g => g
+            .attr('transform', `translate(${plotArea.x[0]},0)`)
             .call(d3
                 .axisLeft(altScale)
                 .ticks(altTicksN)
                 .tickFormat((d, i) => d === altRange[0] ? '' : `${d / altTicks}k`))
-            .call(g => g.select(".domain").remove())
-            .call(g => g.selectAll(".tick line")
+            .call(g => g.select('.domain').remove())
+            .call(g => g.selectAll('.tick line')
                 .attr('stroke-opacity', xTicksOpacity)
                 .attr('x2', plotAreaWidth))
             .call(g => g
-                .selectAll("text")
+                .selectAll('text')
                 .style('font-size', '8px')
                 .attr('text-anchor', 'start')
                 .attr('x', yTicksTextShift)));
 
-        svg.select(".tempAxis").call(g => g
-            .attr("transform", `translate(${plotArea.x[0]},0)`)
+        svg.select('.tempAxis').call(g => g
+            .attr('transform', `translate(${plotArea.x[0]},0)`)
             .call(d3
                 .axisLeft(tempScale)
                 .ticks(tempTicksN)
                 .tickFormat((d, i) => d === tempRange[0] ? '' : `${d}°`))
-            .call(g => g.select(".domain").remove())
-            .call(g => g.selectAll(".tick line")
+            .call(g => g.select('.domain').remove())
+            .call(g => g.selectAll('.tick line')
                 .attr('stroke-opacity', xTicksOpacity)
                 .attr('x2', plotAreaWidth))
             .call(g => g
-                .selectAll("text")
+                .selectAll('text')
                 .style('font-size', '8px')
                 .attr('text-anchor', 'start')
                 .attr('x', yTicksTextShift)));
 
-        svg.select(".Ground").datum(samples)
-            .attr("fill", colors.ground)
-            .attr("stroke-width", 0)
+        svg.select('.Ground').datum(samples)
+            .attr('fill', colors.ground)
+            .attr('stroke-width', 0)
             .attr('opacity', 0.5)
-            .attr("d", d3.area()
+            .attr('d', d3.area()
                 .defined(s => s.virtual?.TI && s.virtual?.TIM3)
                 .x((s, i) => tScale(i))
                 .y0(s => altScale(s.virtual.h0 > 0 ? 0 : s.virtual.h0 - 10))
                 .y1(s => altScale(s.virtual.h0)));
 
         // A path for cliping graphs between days.
-        select(".DaysGraphPath")
+        select('.DaysGraphPath')
             .datum(samples.flatMap((s, i) =>
                 dayStart[i] ? [{ i, v: rect.height }, { i, v: 0 }]
                     : dayEnd[i] ? [{ i, v: 0 }, { i, v: rect.height }] : []))
-            .attr("id", 'DaysGraphPath')
-            .append("path")
-            .attr("d", d3.area()
+            .attr('id', 'DaysGraphPath')
+            .append('path')
+            .attr('d', d3.area()
                 .x(s => tScale(s.i))
                 .y0(rect.height)
                 .y1(s => s.v)
             );
 
         svg
-            .select(".TIVirt")
+            .select('.TIVirt')
             .datum(samples)
-            .attr("fill", colors.virtTI)
-            .attr("stroke-width", 0)
+            .attr('fill', colors.virtTI)
+            .attr('stroke-width', 0)
             .attr('opacity', 0.3)
-            .attr("clip-path", "url(#DaysGraphPath)")
-            .attr("d", d3.area()
+            .attr('clip-path', 'url(#DaysGraphPath)')
+            .attr('d', d3.area()
                 .defined(s => s.virtual?.TI && s.virtual?.TIM3)
                 .x((s, i) => tScale(i))
                 .y0(s => altScale(s.virtual.TIM3))
                 .y1(s => altScale(s.virtual.TI)));
 
         svg
-            .select(".TIMeasured")
+            .select('.TIMeasured')
             .datum(samples)
-            .attr("fill", colors.measuredTI)
-            .attr("stroke-width", 0)
+            .attr('fill', colors.measuredTI)
+            .attr('stroke-width', 0)
             .attr('opacity', 0.3)
-            .attr("clip-path", "url(#DaysGraphPath)")
-            .attr("d", d3.area()
+            .attr('clip-path', 'url(#DaysGraphPath)')
+            .attr('d', d3.area()
                 .defined(s => s?.measured?.TI && s?.measured?.TIM3)
                 .x((s, i) => tScale(i))
                 .y0(s => altScale(s.measured.TIM3))
                 .y1(s => altScale(s.measured.TI)));
 
         svg
-            .select(".CloudBaseVirtual")
+            .select('.CloudBaseVirtual')
             .datum(samples)
-            .attr("fill", "none")
-            .attr("stroke", colors.cloudBase)
-            .attr("stroke-width", 0.5)
-            .attr("clip-path", "url(#DaysGraphPath)")
-            .attr("d", d3.line()
+            .attr('fill', 'none')
+            .attr('stroke', colors.cloudBase)
+            .attr('stroke-width', 0.5)
+            .attr('clip-path', 'url(#DaysGraphPath)')
+            .attr('d', d3.line()
                 .defined(s => s.virtual?.cloudBase)
                 .x((s, i) => tScale(i))
                 .y(s => altScale(s.virtual.cloudBase)));
 
         svg
-            .select(".CloudBaseMeasured")
+            .select('.CloudBaseMeasured')
             .datum(samples)
-            .attr("fill", "none")
-            .attr("stroke", colors.cloudBase)
-            .attr("stroke-width", 0.5)
-            .attr("clip-path", "url(#DaysGraphPath)")
-            .attr("stroke-dasharray", "4,4")
-            .attr("d", d3.line()
+            .attr('fill', 'none')
+            .attr('stroke', colors.cloudBase)
+            .attr('stroke-width', 0.5)
+            .attr('clip-path', 'url(#DaysGraphPath)')
+            .attr('stroke-dasharray', '4,4')
+            .attr('d', d3.line()
                 .defined(s => s.measured?.cloudBase)
                 .x((s, i) => tScale(i))
                 .y(s => altScale(s.measured?.cloudBase))
             );
 
         svg
-            .select(".Temp")
+            .select('.Temp')
             .datum(samples)
-            .attr("fill", "none")
-            .attr("stroke", "red")
-            .attr("stroke-width", 0.5)
-            .attr("clip-path", "url(#DaysGraphPath)")
-            .attr("d", d3.line()
+            .attr('fill', 'none')
+            .attr('stroke', 'red')
+            .attr('stroke-width', 0.5)
+            .attr('clip-path', 'url(#DaysGraphPath)')
+            .attr('d', d3.line()
                 .defined(s => s.virtual?.t0)
                 .x((s, i) => tScale(i))
                 .y(s => tempScale(s.virtual.t0))
             );
 
-        select(".BelowTemp")
+        select('.BelowTemp')
             .datum(samples)
-            .attr("id", 'BelowTemp')
-            .append("path")
-            .attr("clip-path", "url(#DaysGraphPath)")
-            .attr("d", d3.area()
+            .attr('id', 'BelowTemp')
+            .append('path')
+            .attr('clip-path', 'url(#DaysGraphPath)')
+            .attr('d', d3.area()
                 .defined(s => s.virtual?.t0)
                 .x((s, i) => tScale(i))
                 .y0(0)
                 .y1(s => tempScale(s.virtual.t0))
             );
 
-        select(".AboveTemp")
+        select('.AboveTemp')
             .datum(samples)
-            .attr("id", 'AboveTemp')
-            .append("path")
-            .attr("clip-path", "url(#DaysGraphPath)")
-            .attr("d", d3.area()
+            .attr('id', 'AboveTemp')
+            .append('path')
+            .attr('clip-path', 'url(#DaysGraphPath)')
+            .attr('d', d3.area()
                 .defined(s => s.virtual?.t0)
                 .x((s, i) => tScale(i))
                 .y0(rect.height)
@@ -287,13 +287,13 @@ export default function Timeline({ data, time, setTime }) {
             );
 
         svg
-            .select(".TrigVirtGood")
+            .select('.TrigVirtGood')
             .datum(samples)
-            .attr("fill", colors.good)
-            .attr("stroke-width", 0)
+            .attr('fill', colors.good)
+            .attr('stroke-width', 0)
             .attr('opacity', 0.2)
-            .attr("clip-path", "url(#AboveTemp)")
-            .attr("d", d3.area()
+            .attr('clip-path', 'url(#AboveTemp)')
+            .attr('d', d3.area()
                 .defined(s => s.virtual?.trig && s.virtual?.t0)
                 .x((s, i) => tScale(i))
                 .y0(s => tempScale(s.virtual.t0))
@@ -301,13 +301,13 @@ export default function Timeline({ data, time, setTime }) {
             );
 
         svg
-            .select(".TrigMeasuredGood")
+            .select('.TrigMeasuredGood')
             .datum(samples)
-            .attr("fill", colors.good)
-            .attr("stroke-width", 0)
+            .attr('fill', colors.good)
+            .attr('stroke-width', 0)
             .attr('opacity', 0.2)
-            .attr("clip-path", "url(#AboveTemp)")
-            .attr("d", d3.area()
+            .attr('clip-path', 'url(#AboveTemp)')
+            .attr('d', d3.area()
                 .defined(s => s.measured?.trig && s.measured?.t0)
                 .x((s, i) => tScale(i))
                 .y0(s => tempScale(s.measured.t0))
@@ -315,13 +315,13 @@ export default function Timeline({ data, time, setTime }) {
             );
 
         svg
-            .select(".TrigVirtBad")
+            .select('.TrigVirtBad')
             .datum(samples)
-            .attr("fill", colors.bad)
-            .attr("stroke-width", 0)
+            .attr('fill', colors.bad)
+            .attr('stroke-width', 0)
             .attr('opacity', 0.2)
-            .attr("clip-path", "url(#BelowTemp)")
-            .attr("d", d3.area()
+            .attr('clip-path', 'url(#BelowTemp)')
+            .attr('d', d3.area()
                 .defined(s => s.virtual?.trig && s.virtual?.t0)
                 .x((s, i) => tScale(i))
                 .y0(s => tempScale(s.virtual.t0))
@@ -329,49 +329,49 @@ export default function Timeline({ data, time, setTime }) {
             );
 
         svg
-            .select(".TrigVirt")
+            .select('.TrigVirt')
             .datum(samples)
-            .attr("fill", "none")
-            .attr("stroke", "blue")
-            .attr("stroke-width", 0.5)
-            .attr("clip-path", "url(#DaysGraphPath)")
-            .attr("d", d3.line()
+            .attr('fill', 'none')
+            .attr('stroke', 'blue')
+            .attr('stroke-width', 0.5)
+            .attr('clip-path', 'url(#DaysGraphPath)')
+            .attr('d', d3.line()
                 .defined(s => s.virtual?.trig)
                 .x((s, i) => tScale(i))
                 .y(s => tempScale(s.virtual.trig))
             );
 
         svg
-            .select(".TrigMeasured")
+            .select('.TrigMeasured')
             .datum(samples)
-            .attr("fill", "none")
-            .attr("stroke", "blue")
-            .attr("stroke-width", 0.5)
-            .attr("clip-path", "url(#DaysGraphPath)")
-            .attr("stroke-dasharray", "4,4")
-            .attr("d", d3.line()
+            .attr('fill', 'none')
+            .attr('stroke', 'blue')
+            .attr('stroke-width', 0.5)
+            .attr('clip-path', 'url(#DaysGraphPath)')
+            .attr('stroke-dasharray', '4,4')
+            .attr('d', d3.line()
                 .defined(s => s.measured?.trig)
                 .x((s, i) => tScale(i))
                 .y(s => tempScale(s.measured.trig))
             );
 
         // Draw a button for each hour.
-        svg.selectAll(".buttons").remove();
+        svg.selectAll('.buttons').remove();
         samples.forEach((s, i) => {
             const selected = dateTimeURLFormat(s.t) === dateTimeURLFormat(time);
             const opacity = selected ? 0.2 : 0;
             const button = svg
-                .append("rect")
-                .attr("class", "buttons")
-                .attr("x", tScale(i) - hourWidth / 2)
-                .attr("y", dayLabelOffset + 3)
-                .attr("width", hourWidth)
-                .attr("height", plotArea.y[0] - plotArea.y[1] + dayLabelOffset + 4)
-                .attr("fill", colors.selected)
-                .attr("stroke", "black")
-                .attr("stroke-width", 1)
-                .attr("rx", 3)
-                .attr("ry", 3)
+                .append('rect')
+                .attr('class', 'buttons')
+                .attr('x', tScale(i) - hourWidth / 2)
+                .attr('y', dayLabelOffset + 3)
+                .attr('width', hourWidth)
+                .attr('height', plotArea.y[0] - plotArea.y[1] + dayLabelOffset + 4)
+                .attr('fill', colors.selected)
+                .attr('stroke', 'black')
+                .attr('stroke-width', 1)
+                .attr('rx', 3)
+                .attr('ry', 3)
                 .attr('opacity', opacity);
             button.on('click', () => setTime(s.t));
             button.on('mouseover', () => button.attr('opacity', selected ? opacity : 0.1));
@@ -382,30 +382,30 @@ export default function Timeline({ data, time, setTime }) {
         <svg
             ref={ref}
             style={{
-                height: "200px",
-                width: "100%",
-                marginRight: "0px",
-                marginLeft: "0px",
+                height: '200px',
+                width: '100%',
+                marginRight: '0px',
+                marginLeft: '0px',
             }}
         >
-            <g className="hoursAxis" />
-            <g className="daysAxis" />
-            <g className="altAxis" />
-            <g className="tempAxis" />
-            <clipPath className="DaysGraphPath" />
-            <clipPath className="AboveTemp" />
-            <clipPath className="BelowTemp" />
-            <path className="Ground" />
-            <path className="TIVirt" />
-            <path className="TIMeasured" />
-            <path className="CloudBaseVirtual" />
-            <path className="CloudBaseMeasured" />
-            <path className="TrigVirtGood" />
-            <path className="TrigVirtBad" />
-            <path className="TrigMeasuredGood" />
-            <path className="TrigVirt" />
-            <path className="TrigMeasured" />
-            <path className="Temp" />
+            <g className='hoursAxis' />
+            <g className='daysAxis' />
+            <g className='altAxis' />
+            <g className='tempAxis' />
+            <clipPath className='DaysGraphPath' />
+            <clipPath className='AboveTemp' />
+            <clipPath className='BelowTemp' />
+            <path className='Ground' />
+            <path className='TIVirt' />
+            <path className='TIMeasured' />
+            <path className='CloudBaseVirtual' />
+            <path className='CloudBaseMeasured' />
+            <path className='TrigVirtGood' />
+            <path className='TrigVirtBad' />
+            <path className='TrigMeasuredGood' />
+            <path className='TrigVirt' />
+            <path className='TrigMeasured' />
+            <path className='Temp' />
         </svg>
     );
 }

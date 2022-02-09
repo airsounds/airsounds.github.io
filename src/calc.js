@@ -158,6 +158,5 @@ function calcDayData(hours) {
         cloudBaseMax,
         TIText: limitsText(TIM3Max, TIMax, ' ft'),
         cloudBaseText: limitsText(cloudBaseMin, cloudBaseMax, 'ft'),
-        // uwyoHour: day.uwyo ? "N/A" : day.uwyo.hour,
     }
 }
