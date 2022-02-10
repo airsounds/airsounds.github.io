@@ -10,11 +10,7 @@ export default function Timeline({ data, time, setTime }) {
             return;
         }
 
-        function select(className) {
-            const elem = svg.select(className);
-            elem.selectAll('*').remove();
-            return elem
-        }
+        svg.selectAll('*').remove();
 
         const samples = Object.values(data)
             .flatMap(dayData => Object.entries(dayData.hours)
@@ -103,7 +99,7 @@ export default function Timeline({ data, time, setTime }) {
             .range(yTemp);
 
 
-        svg.select('.hoursAxis').call(g => g
+        svg.append('g').call(g => g
             .attr('transform', `translate(0,${plotArea.y[1]})`)
             .call(d3
                 .axisTop(tScale)
@@ -116,7 +112,7 @@ export default function Timeline({ data, time, setTime }) {
                 .style('font-size', '8px')
                 .attr('text-anchor', 'middle')));
 
-        svg.select('.daysAxis').call(g => g
+        svg.append('g').call(g => g
             .attr('transform', `translate(0,${plotArea.y[1] - dayLabelOffset})`)
             .call(d3
                 .axisTop(tScale)
@@ -143,7 +139,7 @@ export default function Timeline({ data, time, setTime }) {
         const altTicksN = Math.floor((altRange[1] - altRange[0]) / altTicks);
         const tempTicksN = Math.floor((tempRange[1] - tempRange[0]) / tempTicks);
 
-        svg.select('.altAxis').call(g => g
+        svg.append('g').call(g => g
             .attr('transform', `translate(${plotArea.x[0]},0)`)
             .call(d3
                 .axisLeft(altScale)
@@ -159,7 +155,7 @@ export default function Timeline({ data, time, setTime }) {
                 .attr('text-anchor', 'start')
                 .attr('x', yTicksTextShift)));
 
-        svg.select('.tempAxis').call(g => g
+        svg.append('g').call(g => g
             .attr('transform', `translate(${plotArea.x[0]},0)`)
             .call(d3
                 .axisLeft(tempScale)
@@ -175,7 +171,7 @@ export default function Timeline({ data, time, setTime }) {
                 .attr('text-anchor', 'start')
                 .attr('x', yTicksTextShift)));
 
-        svg.select('.Ground').datum(samples)
+        svg.append('path').datum(samples)
             .attr('fill', colors.ground)
             .attr('stroke-width', 0)
             .attr('opacity', 0.5)
@@ -186,7 +182,7 @@ export default function Timeline({ data, time, setTime }) {
                 .y1(s => altScale(s.virtual.h0)));
 
         // A path for cliping graphs between days.
-        select('.DaysGraphPath')
+        svg.append('clipPath')
             .datum(samples.flatMap((s, i) =>
                 dayStart[i] ? [{ i, v: rect.height }, { i, v: 0 }]
                     : dayEnd[i] ? [{ i, v: 0 }, { i, v: rect.height }] : []))
@@ -199,7 +195,7 @@ export default function Timeline({ data, time, setTime }) {
             );
 
         svg
-            .select('.TIVirt')
+            .append('path')
             .datum(samples)
             .attr('fill', colors.virtTI)
             .attr('stroke-width', 0)
@@ -212,7 +208,7 @@ export default function Timeline({ data, time, setTime }) {
                 .y1(s => altScale(s.virtual.TI)));
 
         svg
-            .select('.TIMeasured')
+            .append('path')
             .datum(samples)
             .attr('fill', colors.measuredTI)
             .attr('stroke-width', 0)
@@ -225,7 +221,7 @@ export default function Timeline({ data, time, setTime }) {
                 .y1(s => altScale(s.measured.TI)));
 
         svg
-            .select('.CloudBaseVirtual')
+            .append('path')
             .datum(samples)
             .attr('fill', 'none')
             .attr('stroke', colors.cloudBase)
@@ -237,7 +233,7 @@ export default function Timeline({ data, time, setTime }) {
                 .y(s => altScale(s.virtual.cloudBase)));
 
         svg
-            .select('.CloudBaseMeasured')
+            .append('path')
             .datum(samples)
             .attr('fill', 'none')
             .attr('stroke', colors.cloudBase)
@@ -263,7 +259,7 @@ export default function Timeline({ data, time, setTime }) {
                 .y(s => tempScale(s.virtual.t0))
             );
 
-        select('.BelowTemp')
+        svg.append('clipPath')
             .datum(samples)
             .attr('id', 'BelowTemp')
             .append('path')
@@ -275,7 +271,7 @@ export default function Timeline({ data, time, setTime }) {
                 .y1(s => tempScale(s.virtual.t0))
             );
 
-        select('.AboveTemp')
+        svg.append('clipPath')
             .datum(samples)
             .attr('id', 'AboveTemp')
             .append('path')
@@ -288,7 +284,7 @@ export default function Timeline({ data, time, setTime }) {
             );
 
         svg
-            .select('.TrigVirtGood')
+            .append('path')
             .datum(samples)
             .attr('fill', colors.good)
             .attr('stroke-width', 0)
@@ -302,7 +298,7 @@ export default function Timeline({ data, time, setTime }) {
             );
 
         svg
-            .select('.TrigMeasuredGood')
+            .append('path')
             .datum(samples)
             .attr('fill', colors.good)
             .attr('stroke-width', 0)
@@ -316,7 +312,7 @@ export default function Timeline({ data, time, setTime }) {
             );
 
         svg
-            .select('.TrigVirtBad')
+            .append('path')
             .datum(samples)
             .attr('fill', colors.bad)
             .attr('stroke-width', 0)
@@ -330,7 +326,7 @@ export default function Timeline({ data, time, setTime }) {
             );
 
         svg
-            .select('.TrigVirt')
+            .append('path')
             .datum(samples)
             .attr('fill', 'none')
             .attr('stroke', 'blue')
@@ -343,7 +339,7 @@ export default function Timeline({ data, time, setTime }) {
             );
 
         svg
-            .select('.TrigMeasured')
+            .append('path')
             .datum(samples)
             .attr('fill', 'none')
             .attr('stroke', 'blue')
@@ -357,7 +353,6 @@ export default function Timeline({ data, time, setTime }) {
             );
 
         // Draw a button for each hour.
-        svg.selectAll('.buttons').remove();
         samples.forEach((s, i) => {
             const selected = dateTimeURLFormat(s.t) === dateTimeURLFormat(time);
             const opacity = selected ? 0.2 : 0;
@@ -381,24 +376,6 @@ export default function Timeline({ data, time, setTime }) {
     }, [data, time]);
     return (
         <svg ref={ref} className="Timeline">
-            <g className='hoursAxis' />
-            <g className='daysAxis' />
-            <g className='altAxis' />
-            <g className='tempAxis' />
-            <clipPath className='DaysGraphPath' />
-            <clipPath className='AboveTemp' />
-            <clipPath className='BelowTemp' />
-            <path className='Ground' />
-            <path className='TIVirt' />
-            <path className='TIMeasured' />
-            <path className='CloudBaseVirtual' />
-            <path className='CloudBaseMeasured' />
-            <path className='TrigVirtGood' />
-            <path className='TrigVirtBad' />
-            <path className='TrigMeasuredGood' />
-            <path className='TrigVirt' />
-            <path className='TrigMeasured' />
-            <path className='Temp' />
         </svg>
     );
 }

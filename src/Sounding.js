@@ -10,6 +10,8 @@ export default function Sounding({ data, time, setError }) {
             return;
         }
 
+        svg.selectAll('*').remove();
+
         // Manipulate data.
         const dateTimeData = data[dateFormat(time)].hours[hourFormat(time)]
         const virtual = dateTimeData.virtual
@@ -56,26 +58,20 @@ export default function Sounding({ data, time, setError }) {
             .range(windPlotAreaX);
 
         function initParams(p, defaults) {
-            if (p === undefined) {
+            if (!p) {
                 p = {}
             }
             const keys = Object.keys(defaults)
             for (let i in keys) {
                 const key = keys[i];
-                if (p[key] === undefined) {
+                if (!p[key]) {
                     p[key] = defaults[key];
                 }
             }
             return p;
         }
 
-        function select(className) {
-            const elem = svg.select(className);
-            elem.selectAll('*').remove();
-            return elem
-        }
-
-        function drawLine(elem, x, y, params) {
+        function drawLine(x, y, params) {
             params = initParams(params, {
                 color: 'black',
                 width: 1,
@@ -104,8 +100,7 @@ export default function Sounding({ data, time, setError }) {
 
             if (params.arrowSize > 0) {
                 const size = params.arrowSize;
-                elem
-                    .append('marker')
+                svg.append('marker')
                     .attr('id', 'arrow')
                     .attr('viewBox', [0, 0, size, size])
                     .attr('refX', size / 2)
@@ -119,7 +114,7 @@ export default function Sounding({ data, time, setError }) {
                     .attr('fill', params.color);
             }
 
-            const path = elem.append('path')
+            const path = svg.append('path')
                 .datum(points)
                 .attr('fill', 'none')
                 .attr('stroke', params.color)
@@ -138,9 +133,9 @@ export default function Sounding({ data, time, setError }) {
             }
         }
 
-        function drawPoint(elem, x, y, color) {
+        function drawPoint(x, y, color) {
             const point = [{ x: tempScale(x), y: altScale(y) }]
-            elem.append('g')
+            svg.append('g')
                 .attr('fill', 'white')
                 .attr('stroke', color)
                 .attr('stroke-width', 2)
@@ -152,7 +147,7 @@ export default function Sounding({ data, time, setError }) {
                 .attr('r', 3);
         }
 
-        function drawText(elem, x, y, text, params) {
+        function drawText(x, y, text, params) {
             params = initParams(params, {
                 xScale: tempScale,
                 size: 14,
@@ -162,7 +157,7 @@ export default function Sounding({ data, time, setError }) {
             })
 
             const point = [{ x: params.xScale(x), y: altScale(y) }]
-            const label = elem.append('g')
+            const label = svg.append('g')
             label
                 .attr('font-family', 'sans-serif')
                 .attr('font-size', params.size)
@@ -185,12 +180,12 @@ export default function Sounding({ data, time, setError }) {
                 })
                 .call(halo);
         }
-        function drawPolygon(elem, points, color, width) {
+        function drawPolygon(points, color, width) {
             const d = []
             for (let i in points) {
                 d.push([tempScale(points[i][0]), altScale(points[i][1])])
             }
-            elem.append('polygon')
+            svg.append('polygon')
                 .datum(d)
                 .attr('points', pts => pts.map(p => p.join(',')).join(' '))
                 .attr('fill', color)
@@ -203,7 +198,8 @@ export default function Sounding({ data, time, setError }) {
 
         // Start drawing!
 
-        select('.clipPlotArea')
+        svg.append('clipPath')
+            .attr('id', 'clipPlotArea')
             .append('rect')
             .attr('x', tempPlotAreaX[0])
             .attr('y', altPlotAreaY[1])
@@ -212,17 +208,14 @@ export default function Sounding({ data, time, setError }) {
 
 
         // Draw diagonal ticks.
-        const ticksElem = select('.diagonalTicks');
         for (let x0 = tempRange[1]; x0 > tempRange[0]; x0 -= xTick) {
             drawLine(
-                ticksElem,
                 [tempRange[0], x0],
                 [y(tempRange[0], x0, altRange[0]), altRange[0]],
                 { color: '#ebecf0' });
         }
         // Draw ground.
         drawPolygon(
-            select('.ground'),
             [
                 [tempRange[0], altRange[0]],
                 [tempRange[1], altRange[0]],
@@ -230,46 +223,43 @@ export default function Sounding({ data, time, setError }) {
                 [tempRange[0], virtual.h0],
             ],
             colors.ground, 1.5)
-        drawText(select('.altLabel'), tempRange[1], virtual.h0, `Alt: ${virtual.h0} ft`,
+        drawText(tempRange[1], virtual.h0, `Alt: ${virtual.h0} ft`,
             { valign: 'top', halign: 'start' })
 
         // Draw temperature graphs.
         if (virtual) {
-            drawLine(select('.virtualTemp'), virtual.temp, virtual.alt,
+            drawLine(virtual.temp, virtual.alt,
                 { color: 'red', width: 2 });
-            drawLine(select('.virtaulDew'), virtual.dew, virtual.alt,
-                { color: 'blue', width: 2 });
+            drawLine(virtual.dew, virtual.alt,
+                { color: 'blue', width: 1 });
         }
         if (measured) {
-            drawLine(select('.measuredTemp'), measured.temp, measured.alt,
+            drawLine(measured.temp, measured.alt,
                 { color: 'red', width: 2, dashed: true });
-            drawLine(select('.measuredDew'), measured.dew, measured.alt,
+            drawLine(measured.dew, measured.alt,
                 { color: 'blue', width: 2, dashed: true });
         }
 
         // Draw wind
-        drawLine(select('.virtualWindSpeed'), virtual.windSpeed, virtual.alt,
+        drawLine(virtual.windSpeed, virtual.alt,
             { color: '#444444', xScale: windScale })
-        const virtualWindElem = select('.virtualWindSpeedLabels')
         for (let i in virtual.windSpeed) {
             const dir = windDirName(virtual.windDir[i])
-            drawText(virtualWindElem, virtual.windSpeed[i], virtual.alt[i], virtual.windSpeed[i] + dir,
+            drawText(virtual.windSpeed[i], virtual.alt[i], virtual.windSpeed[i] + dir,
                 { size: 10, xScale: windScale })
         }
         if (measured) {
-            const measuredWindElem = select('.measuredWindSpeedLabels')
-            drawLine(select('.measuredWindSpeed'), measured.windSpeed, measured.alt,
+            drawLine(measured.windSpeed, measured.alt,
                 { color: '#444444', xScale: windScale, dashed: true })
             for (let i in measured.windSpeed) {
                 const dir = windDirName(measured.windDir[i])
-                drawText(measuredWindElem, measured.windSpeed[i], measured.alt[i], measured.windSpeed[i] + dir,
+                drawText(measured.windSpeed[i], measured.alt[i], measured.windSpeed[i] + dir,
                     { size: 10, xScale: windScale, color: '#444444' })
             }
         }
 
         // Max temperature diagonals.
         drawPolygon(
-            select('.maxTempDiagonal'),
             [
                 [virtual.t0, virtual.h0],
                 [virtual.t0 - 3, virtual.h0],
@@ -279,21 +269,20 @@ export default function Sounding({ data, time, setError }) {
             ],
             colors.tempDiagonal, 0
         );
-        drawPoint(select('.virtualT0'), virtual.t0, virtual.h0, 'red');
-        drawText(select('.virtualT0Label'), virtual.t0, virtual.h0, 'T0: ' + virtual.t0 + 'ºC',
+        drawPoint(virtual.t0, virtual.h0, 'red');
+        drawText(virtual.t0, virtual.h0, 'T0: ' + virtual.t0 + 'ºC',
             { valign: 'top' })
 
         if (virtual.trig) {
-            const color = (virtual.isTriggered) ? 'green' : 'red';
-            drawLine(select('.trigger'), [virtual.t0, virtual.trig], [virtual.h0, virtual.h0],
+            const color = (virtual.isTriggered) ? colors.good : colors.bad;
+            drawLine([virtual.t0, virtual.trig], [virtual.h0, virtual.h0],
                 { color: color, duration: 2500, arrowSize: 14 })
-            drawText(select('.triggerLabel'), virtual.trig, virtual.h0, 'Trigger: ' + virtual.trig.toFixed(1) + 'ºC',
+            drawText(virtual.trig, virtual.h0, 'Trigger: ' + virtual.trig.toFixed(1) + 'ºC',
                 { valign: 'top' })
         }
 
         // Thermal indices.
         drawPolygon(
-            select('.virtualThermalIndex'),
             [
                 [tempRange[0], virtual.TI],
                 [tempRange[1], virtual.TI],
@@ -303,16 +292,15 @@ export default function Sounding({ data, time, setError }) {
             colors.virtTI, 0
         );
         if (virtual.TI !== virtual.h0) {
-            drawText(select('.virtualTILabel'), tempRange[1], virtual.TI, 'TI (virt): ' + virtual.TI.toFixed(0) + 'ft',
+            drawText(tempRange[1], virtual.TI, 'TI (virt): ' + virtual.TI.toFixed(0) + 'ft',
                 { halign: 'start' })
         }
         if (virtual.TIM3 !== virtual.h0) {
-            drawText(select('.virtualTIM3Label'), tempRange[1], virtual.TIM3, 'TI-3 (virt): ' + virtual.TIM3.toFixed(0) + 'ft',
+            drawText(tempRange[1], virtual.TIM3, 'TI-3 (virt): ' + virtual.TIM3.toFixed(0) + 'ft',
                 { halign: 'start' })
         }
         if (measured) {
             drawPolygon(
-                select('.measuredThermalIndex'),
                 [
                     [tempRange[0], measured.TI],
                     [tempRange[1], measured.TI],
@@ -322,11 +310,11 @@ export default function Sounding({ data, time, setError }) {
                 colors.measuredTI, 0
             )
             if (measured.TI !== virtual.h0) {
-                drawText(select('measuredTILabel'), tempRange[1], measured.TI, 'TI (measured): ' + measured.TI.toFixed(0) + 'ft',
+                drawText(tempRange[1], measured.TI, 'TI (measured): ' + measured.TI.toFixed(0) + 'ft',
                     { halign: 'start' })
             }
             if (measured.TIM3 !== virtual.h0) {
-                drawText(select('measuredTIM3Label'), tempRange[1], measured.TIM3, 'TI-3 (measured): ' + measured.TIM3.toFixed(0) + 'ft',
+                drawText(tempRange[1], measured.TIM3, 'TI-3 (measured): ' + measured.TIM3.toFixed(0) + 'ft',
                     { halign: 'start' })
             }
         }
@@ -336,11 +324,10 @@ export default function Sounding({ data, time, setError }) {
             const vcloudBaseY = Math.min(virtual.cloudBase, altRange[1]);
             if (virtual.cloudBase <= altRange[1]) {
                 drawLine(
-                    select('.virtualCloudBase'),
                     tempRange, [vcloudBaseY, vcloudBaseY],
                     { color: colors.cloudBase, duration: 500 })
             }
-            drawText(select('.virtCloudBaseLabel'), tempRange[1], vcloudBaseY, 'Cloud base (virt): ' + virtual.cloudBase.toFixed(0) + 'ft',
+            drawText(tempRange[1], vcloudBaseY, 'Cloud base (virt): ' + virtual.cloudBase.toFixed(0) + 'ft',
                 { halign: 'start' })
         }
 
@@ -348,11 +335,10 @@ export default function Sounding({ data, time, setError }) {
             const mcloudBaseY = Math.min(measured.cloudBase, altRange[1]);
             if (measured.cloudBase <= altRange[1]) {
                 drawLine(
-                    select('.measuredCloudBase'),
                     tempRange, [mcloudBaseY, mcloudBaseY],
                     { color: colors.cloudBase, duration: 500, dashed: true })
             }
-            drawText(select('.measuredCloudBaseLabel'), tempRange[1], mcloudBaseY, 'Cloud base (measured): ' + measured.cloudBase.toFixed(0) + 'ft',
+            drawText(tempRange[1], mcloudBaseY, 'Cloud base (measured): ' + measured.cloudBase.toFixed(0) + 'ft',
                 { halign: 'start' })
         }
 
@@ -362,7 +348,7 @@ export default function Sounding({ data, time, setError }) {
         const windTicks = 5;
 
         // Alt axis.
-        select('.altAxis').call(g => g
+        svg.append('g').call(g => g
             .attr('transform', `translate(${margin.left},0)`)
             .call(d3.axisLeft(altScale).ticks(altTicks, 's'))
             .call(g => g.select('.domain').remove())
@@ -385,7 +371,7 @@ export default function Sounding({ data, time, setError }) {
                 .attr('x', -28)));
 
         // Temp axis.
-        select('.tempAxis').call(g => g
+        svg.append('g').call(g => g
             .attr('transform', `translate(0,${height - margin.bottom - 20})`)
             .call(d3.axisBottom(tempScale).ticks(tempTicks))
             .call(g => g.select('.domain').remove())
@@ -403,7 +389,7 @@ export default function Sounding({ data, time, setError }) {
                 .call(halo)));
 
         // Wind axis.
-        select('.windAxis').call(g => g
+        svg.append('g').call(g => g
             .attr('transform', `translate(0,${height - margin.bottom})`)
             .call(d3.axisBottom(windScale).ticks(windTicks))
             .call(g => g.select('.domain').remove())
@@ -431,44 +417,6 @@ export default function Sounding({ data, time, setError }) {
 
     return (
         <svg ref={ref} className='Sounding' >
-            <clipPath className='clipPlotArea' id='clipPlotArea' />
-            <g className='diagonalTicks' />
-            <g className='altLabel' />
-            <g className='virtualT0Label' />
-            <g className='triggerLabel' />
-            <g className='tempAxis' />
-            <g className='altAxis' />
-            <g className='windAxis' />
-            <g className='virtualTILabel' />
-            <g className='virtualTIM3Label' />
-            <g className='measuredTILabel' />
-            <g className='measuredTIM3Label' />
-            <g className='virtCloudBaseLabel' />
-            <g className='measuredCloudBaseLabel' />
-            <g className='virtualWindSpeedLabels' />
-            <g className='measuredWindSpeedLabels' />
-
-
-            <g className='virtualTemp' />
-            <g className='virtualDue' />
-            <g className='measuredTemp' />
-            <g className='measuredDew' />
-            <g className='virtualWindSpeed' />
-            <g className='measuredWindSpeed' />
-            <g className='trigger' />
-            <g className='virtualCloudBase' />
-            <g className='measuredCloudBase' />
-
-            <g className='virtualT0' />
-
-            <g className='ground' />
-            <g className='maxTempDiagonal' />
-            <g className='virtualThermalIndex' />
-            <g className='measuredThermalIndex' />
-            <g className='TIVirtual' />
-            <g className='TIMeasured' />
-            <g className='CloudBase' />
-            <g className='Temp' />
         </svg>
     );
 }

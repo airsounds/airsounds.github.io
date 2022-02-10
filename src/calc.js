@@ -79,12 +79,12 @@ function calcHourSounding(placeInfo, hour, forecast, soundingData) {
     // Thermal index calculations.
     const TI = intersect(data.temp, data.alt, data.t0, data.h0, M);
     // Set the thermal index to be not lower than the ground level.
-    if (TI != null && TI[1] >= data.h0) {
+    if (TI && TI[1] >= data.h0) {
         data.TI = TI[1];
     } else {
         data.TI = data.h0;
     }
-    var TIM3 = intersect(data.temp, data.alt, data.t0 - 3, data.h0, M);
+    const TIM3 = intersect(data.temp, data.alt, data.t0 - 3, data.h0, M);
     if (TIM3 != null && TIM3[1] >= data.h0) {
         data.TIM3 = TIM3[1];
     } else {
@@ -92,17 +92,17 @@ function calcHourSounding(placeInfo, hour, forecast, soundingData) {
     }
 
     // Cloud base calculation.
-    var dewH0 = intersect(data.alt, data.dew, data.h0, 0, 1);
-    if (dewH0 != null) {
-        data.cloudBase = 1000.0 / 2.5 * (data.t0 - dewH0[1]) + data.h0
+    const dewH0 = intersect(data.alt, data.dew, data.h0, 0, 1);
+    if (dewH0) {
+        data.cloudBase = 1000.0 / 3 * (data.t0 - dewH0[1]) + data.h0
         if (data.cloudBase < 0) {
             data.cloudBase = null;
         }
     }
 
     // Calculate the trigger temperature.
-    var altTriggerT = intersect(data.alt, data.temp, altTrigger, 0, 1);
-    if (altTriggerT != null) {
+    const altTriggerT = intersect(data.alt, data.temp, altTrigger, 0, 1);
+    if (altTriggerT) {
         data.trig = x(data.h0, altTriggerT[1], altTrigger)
         data.isTriggered = data.trig <= data.t0
     }
