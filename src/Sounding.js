@@ -237,7 +237,7 @@ export default function Sounding({ data, time, setError }) {
             drawLine(measured.temp, measured.alt,
                 { color: 'red', width: 2, dashed: true });
             drawLine(measured.dew, measured.alt,
-                { color: 'blue', width: 2, dashed: true });
+                { color: 'blue', width: 1, dashed: true });
         }
 
         // Draw wind
