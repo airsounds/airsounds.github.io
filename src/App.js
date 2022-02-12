@@ -16,13 +16,14 @@ export default function App() {
   const q = new URLSearchParams(location.search);
   const [place, setPlace] = useState(q.get('place') || defaultPlace);
   const [time, setTime] = useState(initialTime(q));
+  const [scrolled, setScrolled] = useState(false);
 
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [helpShown, setHelpShown] = useState(false);
 
   // Fetch data and calculate on start.
-  useEffect(() => fetchAndCalc(time), [time]);
+  useEffect(() => fetchAndCalc(time), [time, scrolled]);
 
   async function fetchAndCalc(time) {
     const index = await fetchIndex(setError)
@@ -33,10 +34,13 @@ export default function App() {
     setData(data);
 
     // Scroll timeline all the way to the left.
-    document.getElementById('timeline-container').scrollBy({
-      left: -window.innerWidth,
-      smooth: true,
-    })
+    if (!scrolled) {
+      document.getElementById('timeline-container').scrollBy({
+        left: -window.innerWidth,
+        smooth: true,
+      })
+      setScrolled(true)
+    }
   }
 
   // Keep query string aligned with viewed data.
