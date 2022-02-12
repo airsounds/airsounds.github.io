@@ -13,7 +13,10 @@ export default function Sounding({ data, time, setError }) {
         svg.selectAll('*').remove();
 
         // Manipulate data.
-        const dateTimeData = data[dateFormat(time)].hours[hourFormat(time)]
+        const dateTimeData = data[dateFormat(time)].hours[time.getHours()]
+        if (!dateTimeData) {
+            return
+        }
         const virtual = dateTimeData.virtual
         const measured = dateTimeData.measured;
 
@@ -282,22 +285,24 @@ export default function Sounding({ data, time, setError }) {
         }
 
         // Thermal indices.
-        drawPolygon(
-            [
-                [tempRange[0], virtual.TI],
-                [tempRange[1], virtual.TI],
-                [tempRange[1], virtual.TIM3],
-                [tempRange[0], virtual.TIM3]
-            ],
-            colors.virtTI, 0
-        );
-        if (virtual.TI !== virtual.h0) {
-            drawText(tempRange[1], virtual.TI, 'TI (virt): ' + virtual.TI.toFixed(0) + 'ft',
-                { halign: 'start' })
-        }
-        if (virtual.TIM3 !== virtual.h0) {
-            drawText(tempRange[1], virtual.TIM3, 'TI-3 (virt): ' + virtual.TIM3.toFixed(0) + 'ft',
-                { halign: 'start' })
+        if (virtual) {
+            drawPolygon(
+                [
+                    [tempRange[0], virtual.TI],
+                    [tempRange[1], virtual.TI],
+                    [tempRange[1], virtual.TIM3],
+                    [tempRange[0], virtual.TIM3]
+                ],
+                colors.virtTI, 0
+            );
+            if (virtual.TI !== virtual.h0) {
+                drawText(tempRange[1], virtual.TI, 'TI (virt): ' + virtual.TI.toFixed(0) + 'ft',
+                    { halign: 'start' })
+            }
+            if (virtual.TIM3 !== virtual.h0) {
+                drawText(tempRange[1], virtual.TIM3, 'TI-3 (virt): ' + virtual.TIM3.toFixed(0) + 'ft',
+                    { halign: 'start' })
+            }
         }
         if (measured) {
             drawPolygon(

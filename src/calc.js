@@ -95,7 +95,7 @@ function calcHourSounding(placeInfo, hour, forecast, soundingData) {
     }
 
     data.TIM3 = thermalIndex(data.t0 - 3, data.h0);
-    data.TI = thermalIndex(data.t0, data.TIM + 200);
+    data.TI = thermalIndex(data.t0, data.h0);
 
     // Cloud base calculation.
     const dewH0 = intersect(data.alt, data.dew, data.h0, 0, 1);
