@@ -77,19 +77,25 @@ function calcHourSounding(placeInfo, hour, forecast, soundingData) {
     }
 
     // Thermal index calculations.
-    const TI = intersect(data.temp, data.alt, data.t0, data.h0, M);
-    // Set the thermal index to be not lower than the ground level.
-    if (TI && TI[1] >= data.h0) {
-        data.TI = TI[1];
-    } else {
-        data.TI = data.h0;
+    function thermalIndex(t0, minAlt) {
+        const ti = intersect(data.temp, data.alt, t0, data.h0, M);
+        if (ti && ti[1] >= data.h0) {
+            return ti[1];
+        } else {
+            const lastT = data.temp[data.temp.length - 1];
+            const lastAlt = data.alt[data.alt.length - 1];
+            if (data.h0 + M * (lastT - data.t0) > lastAlt) {
+                // Sometimes the temp data is truncated before TI. In this case use the last height
+                // as the TI height.
+                console.warn('Temp data truncated, TI set to maximal measured height');
+                return lastAlt;
+            }
+            return minAlt;
+        }
     }
-    const TIM3 = intersect(data.temp, data.alt, data.t0 - 3, data.h0, M);
-    if (TIM3 != null && TIM3[1] >= data.h0) {
-        data.TIM3 = TIM3[1];
-    } else {
-        data.TIM3 = data.h0;
-    }
+
+    data.TIM3 = thermalIndex(data.t0 - 3, data.h0);
+    data.TI = thermalIndex(data.t0, data.TIM + 200);
 
     // Cloud base calculation.
     const dewH0 = intersect(data.alt, data.dew, data.h0, 0, 1);
@@ -116,12 +122,13 @@ function calcHourSounding(placeInfo, hour, forecast, soundingData) {
     // Truncate the data values to the maximal altitude value.
     var i = max(data.alt.findIndex(v => v > data.minY) - 1, 0);
     var j = data.alt.findIndex(v => v > data.maxY) + 1;
-
-    data.alt = data.alt.slice(i, j);
-    data.temp = data.temp.slice(i, j);
-    data.dew = data.dew.slice(i, j);
-    data.windDir = data.windDir.slice(i, j);
-    data.windSpeed = data.windSpeed.slice(i, j);
+    if (j !== 0) {
+        data.alt = data.alt.slice(i, j);
+        data.temp = data.temp.slice(i, j);
+        data.dew = data.dew.slice(i, j);
+        data.windDir = data.windDir.slice(i, j);
+        data.windSpeed = data.windSpeed.slice(i, j);
+    }
 
     return data;
 }
