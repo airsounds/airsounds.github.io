@@ -176,7 +176,7 @@ export default function Timeline({ data, time, setTime }) {
             .attr('stroke-width', 0)
             .attr('opacity', 0.5)
             .attr('d', d3.area()
-                .defined(s => s.virtual?.TI && s.virtual?.TIM3)
+                .defined(s => s.virtual?.h0)
                 .x((s, i) => tScale(i))
                 .y0(s => altScale(s.virtual.h0 > 0 ? 0 : s.virtual.h0 - 10))
                 .y1(s => altScale(s.virtual.h0)));

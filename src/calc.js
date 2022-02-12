@@ -90,8 +90,8 @@ function calcHourSounding(placeInfo, hour, forecast, soundingData) {
                 console.warn('Temp data truncated, TI set to maximal measured height');
                 return lastAlt;
             }
-            return minAlt;
         }
+        return minAlt;
     }
 
     data.TIM3 = thermalIndex(data.t0 - 3, data.h0);
@@ -118,18 +118,6 @@ function calcHourSounding(placeInfo, hour, forecast, soundingData) {
         .reduce(max)
     data.maxY = Math.ceil(data.maxY / yTick) * yTick;
     data.minY = Math.floor(data.h0 / yTick) * yTick;
-
-    // Truncate the data values to the maximal altitude value.
-    var i = max(data.alt.findIndex(v => v > data.minY) - 1, 0);
-    var j = data.alt.findIndex(v => v > data.maxY) + 1;
-    if (j !== 0) {
-        data.alt = data.alt.slice(i, j);
-        data.temp = data.temp.slice(i, j);
-        data.dew = data.dew.slice(i, j);
-        data.windDir = data.windDir.slice(i, j);
-        data.windSpeed = data.windSpeed.slice(i, j);
-    }
-
     return data;
 }
 
