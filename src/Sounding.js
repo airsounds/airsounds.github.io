@@ -1,7 +1,7 @@
 import React from 'react';
 import useD3 from './hooks/useD3';
 import * as d3 from 'd3';
-import { altMax, tempMax, windMax, dateFormat, hourFormat, xTick, yTick, y, colors } from './utils';
+import { altMax, tempMax, windMax, dateFormat, xTick, yTick, y, colors } from './utils';
 import "./App.css"
 
 export default function Sounding({ data, time, setError }) {

@@ -8,7 +8,6 @@ import Help from './Help';
 import { fetchIndex, fetchData } from './fetcher';
 import calc from './calc';
 import { dateFormat, dateTimeURLFormat, dateTimeURLParse } from './utils';
-import { timeFormat } from 'd3';
 
 export default function App() {
   const navigate = useNavigate();

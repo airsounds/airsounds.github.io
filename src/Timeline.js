@@ -2,7 +2,7 @@ import React from 'react';
 import "./App.css"
 import useD3 from './hooks/useD3';
 import * as d3 from 'd3';
-import { dateFormatPlotDay, altMax, tempMax, dateTimeURLFormat, hourFormat, plotHours, colors } from './utils';
+import { dateFormatPlotDay, altMax, tempMax, dateTimeURLFormat, hourFormat, colors } from './utils';
 
 export default function Timeline({ day, time, setTime }) {
     const ref = useD3(({ svg, rect }) => {

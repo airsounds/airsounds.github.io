@@ -1,4 +1,3 @@
-import { text } from 'd3';
 import { dateFormat } from './utils';
 const forecastDays = 4;
 
