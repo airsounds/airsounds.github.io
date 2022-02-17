@@ -247,7 +247,7 @@ export default function Timeline({ data, time, setTime }) {
             );
 
         svg
-            .select('.Temp')
+            .append('path')
             .datum(samples)
             .attr('fill', 'none')
             .attr('stroke', 'red')
