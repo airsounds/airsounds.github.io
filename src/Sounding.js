@@ -153,7 +153,7 @@ export default function Sounding({ data, time, setError }) {
         function drawText(x, y, text, params) {
             params = initParams(params, {
                 xScale: tempScale,
-                size: 14,
+                size: 10,
                 color: 'black',
                 valign: 'middle', // top/bottom/middle.
                 halign: 'middle', // start/middle/end.
@@ -226,39 +226,62 @@ export default function Sounding({ data, time, setError }) {
                 [tempRange[0], virtual.h0],
             ],
             colors.ground, 1.5)
-        drawText(tempRange[1], virtual.h0, `Alt: ${virtual.h0} ft`,
+        drawText(tempRange[1], virtual.h0, `Ground: ${virtual.h0} ft`,
             { valign: 'top', halign: 'start' })
 
-        // Draw temperature graphs.
-        if (virtual) {
-            drawLine(virtual.temp, virtual.alt,
-                { color: 'red', width: 2 });
-            drawLine(virtual.dew, virtual.alt,
-                { color: 'blue', width: 1 });
-        }
-        if (measured) {
-            drawLine(measured.temp, measured.alt,
-                { color: 'red', width: 2, dashed: true });
-            drawLine(measured.dew, measured.alt,
-                { color: 'blue', width: 1, dashed: true });
+        function drawSounding(name, data /* virtual | measured*/, tiColor, dashed) {
+            // Draw temperature graphs.
+            drawLine(data.temp, data.alt,
+                { color: 'red', width: 2, dashed: dashed });
+            drawLine(data.dew, data.alt,
+                { color: 'blue', width: 1, dashed: dashed });
+
+            // Thermal indices.
+            drawPolygon(
+                [
+                    [tempRange[0], data.TI],
+                    [tempRange[1], data.TI],
+                    [tempRange[1], data.TIM3],
+                    [tempRange[0], data.TIM3]
+                ],
+                tiColor, 0
+            );
+            if (data.TI !== data.h0) {
+                drawText(tempRange[1], data.TI, `TI ${name}: ` + data.TI.toFixed(0) + 'ft',
+                    { halign: 'start' })
+            }
+            if (data.TIM3 !== data.h0) {
+                drawText(tempRange[1], data.TIM3, `TI-3 ${name}: ` + data.TIM3.toFixed(0) + 'ft',
+                    { halign: 'start' })
+            }
+
+            // Draw cloud base.
+            if (data.cloudBase) {
+                const vcloudBaseY = Math.min(data.cloudBase, altRange[1]);
+                if (data.cloudBase <= altRange[1]) {
+                    drawLine(
+                        tempRange, [vcloudBaseY, vcloudBaseY],
+                        { color: colors.cloudBase, dashed: dashed })
+                }
+                drawText(tempRange[1], vcloudBaseY, `CB ${name}: ` + data.cloudBase.toFixed(0) + 'ft',
+                    { halign: 'start' })
+            }
+
+            // Draw wind
+            drawLine(data.windSpeed, data.alt,
+                { color: '#444444', xScale: windScale, dashed: dashed })
+            for (let i in data.windSpeed) {
+                const dir = windDirName(data.windDir[i])
+                drawText(data.windSpeed[i], data.alt[i], data.windSpeed[i] + dir,
+                    { size: 10, xScale: windScale })
+            }
         }
 
-        // Draw wind
-        drawLine(virtual.windSpeed, virtual.alt,
-            { color: '#444444', xScale: windScale })
-        for (let i in virtual.windSpeed) {
-            const dir = windDirName(virtual.windDir[i])
-            drawText(virtual.windSpeed[i], virtual.alt[i], virtual.windSpeed[i] + dir,
-                { size: 10, xScale: windScale })
+        if (virtual) {
+            drawSounding('(V)', virtual, colors.virtTI, false);
         }
         if (measured) {
-            drawLine(measured.windSpeed, measured.alt,
-                { color: '#444444', xScale: windScale, dashed: true })
-            for (let i in measured.windSpeed) {
-                const dir = windDirName(measured.windDir[i])
-                drawText(measured.windSpeed[i], measured.alt[i], measured.windSpeed[i] + dir,
-                    { size: 10, xScale: windScale, color: '#444444' })
-            }
+            drawSounding('(M)', measured, colors.measuredTI, true);
         }
 
         // Max temperature diagonals.
@@ -282,69 +305,6 @@ export default function Sounding({ data, time, setError }) {
                 { color: color, duration: 2500, arrowSize: 14 })
             drawText(virtual.trig, virtual.h0, 'Trigger: ' + virtual.trig.toFixed(1) + 'ºC',
                 { valign: 'top' })
-        }
-
-        // Thermal indices.
-        if (virtual) {
-            drawPolygon(
-                [
-                    [tempRange[0], virtual.TI],
-                    [tempRange[1], virtual.TI],
-                    [tempRange[1], virtual.TIM3],
-                    [tempRange[0], virtual.TIM3]
-                ],
-                colors.virtTI, 0
-            );
-            if (virtual.TI !== virtual.h0) {
-                drawText(tempRange[1], virtual.TI, 'TI (virt): ' + virtual.TI.toFixed(0) + 'ft',
-                    { halign: 'start' })
-            }
-            if (virtual.TIM3 !== virtual.h0) {
-                drawText(tempRange[1], virtual.TIM3, 'TI-3 (virt): ' + virtual.TIM3.toFixed(0) + 'ft',
-                    { halign: 'start' })
-            }
-        }
-        if (measured) {
-            drawPolygon(
-                [
-                    [tempRange[0], measured.TI],
-                    [tempRange[1], measured.TI],
-                    [tempRange[1], measured.TIM3],
-                    [tempRange[0], measured.TIM3]
-                ],
-                colors.measuredTI, 0
-            )
-            if (measured.TI !== virtual.h0) {
-                drawText(tempRange[1], measured.TI, 'TI (measured): ' + measured.TI.toFixed(0) + 'ft',
-                    { halign: 'start' })
-            }
-            if (measured.TIM3 !== virtual.h0) {
-                drawText(tempRange[1], measured.TIM3, 'TI-3 (measured): ' + measured.TIM3.toFixed(0) + 'ft',
-                    { halign: 'start' })
-            }
-        }
-
-        // Draw cloud base.
-        if (virtual.cloudBase) {
-            const vcloudBaseY = Math.min(virtual.cloudBase, altRange[1]);
-            if (virtual.cloudBase <= altRange[1]) {
-                drawLine(
-                    tempRange, [vcloudBaseY, vcloudBaseY],
-                    { color: colors.cloudBase, duration: 500 })
-            }
-            drawText(tempRange[1], vcloudBaseY, 'Cloud base (virt): ' + virtual.cloudBase.toFixed(0) + 'ft',
-                { halign: 'start' })
-        }
-
-        if (measured?.cloudBase) {
-            const mcloudBaseY = Math.min(measured.cloudBase, altRange[1]);
-            if (measured.cloudBase <= altRange[1]) {
-                drawLine(
-                    tempRange, [mcloudBaseY, mcloudBaseY],
-                    { color: colors.cloudBase, duration: 500, dashed: true })
-            }
-            drawText(tempRange[1], mcloudBaseY, 'Cloud base (measured): ' + measured.cloudBase.toFixed(0) + 'ft',
-                { halign: 'start' })
         }
 
         // Draw axes.
