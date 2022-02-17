@@ -1,3 +1,4 @@
+import { text } from 'd3';
 import { dateFormat } from './utils';
 const forecastDays = 4;
 
@@ -23,33 +24,30 @@ export async function fetchData(t, setError) {
     if (dateFormat(t) > dateFormat(new Date())) {
         t = new Date();
     }
-    t.setHours(0);
-    t.setMinutes(0);
-    t.setSeconds(0);
-    t.setMilliseconds(0);
 
     const days = []
-    for (let dayI = 0; dayI < forecastDays; dayI++) {
-        days.push({
-            t: new Date(t.getTime()),
-            text: dateFormat(t),
-        })
+    for (let i = 0; i < forecastDays; i++) {
+        days.push(new Date(t.getTime()));
         t.setDate(t.getDate() + 1);
     }
 
-    return await Promise.all(days.map(async day => {
-        day.hours = await fetchDay(day, setError);
-        return day
+    return await Promise.all(days.map(async t => {
+        const text = dateFormat(t);
+        return {
+            t: t,
+            text: text,
+            hours: await fetchDay(text, setError),
+        };
     }));
 }
 
-async function fetchDay(day, setError) {
-    const path = `${prefix}/${day.text.replaceAll('-', '/')}.json`;
+async function fetchDay(dateStr, setError) {
+    const path = `${prefix}/${dateStr.replaceAll('-', '/')}.json`;
     console.debug(`Fetching day ${path}`);
     const resp = await fetch(path);
     if (!resp.ok) {
         setError({
-            title: `Data for day ${day.text} is not available.`,
+            title: `Data for day ${dateStr} is not available.`,
             message: `Error fetching ${path}: ${resp.status}`,
         });
         return null;
@@ -58,7 +56,7 @@ async function fetchDay(day, setError) {
         return await resp.json();
     } catch (e) {
         setError({
-            title: `Data for day ${day.text} is not available.`,
+            title: `Data for day ${dateStr} is not available.`,
             message: `Error fetching ${path}: ${e}`
         });
         return null;
