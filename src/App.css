@@ -22,15 +22,10 @@
   color: white;
 }
 
-.TimelineContainer {
-  overflow-x: auto;
-  scrollbar-width: thin;
-}
-
 .Timeline {
   height: 200px;
   width: 100%;
-  min-width: 800px;
+  max-width: 600px;
   margin-right: 0px;
   margin-left: 0px;
 }

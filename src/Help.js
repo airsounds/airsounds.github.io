@@ -1,11 +1,8 @@
 import { Image, ListGroup, Modal } from 'react-bootstrap';
 
-export default function Help({ show, setShow }) {
+export default function Help() {
     return (
-        <Modal
-            show={show}
-            fullscreen={true}
-            onClick={() => setShow(false)}>
+        <>
             <Modal.Header>
                 <Modal.Title>אודות אייר סאונד</Modal.Title>
             </Modal.Header>
@@ -40,6 +37,6 @@ export default function Help({ show, setShow }) {
                     <ListGroup.Item><b>Trigger</b>: The Ground temperature required required for good conditions.</ListGroup.Item>
                 </ListGroup>
             </Modal.Body>
-        </Modal>
+        </>
     )
 }

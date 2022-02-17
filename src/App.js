@@ -1,6 +1,6 @@
 import './App.css';
 import { useEffect, useState } from 'react';
-import { Navbar, Container, NavDropdown, Nav, Image } from 'react-bootstrap';
+import { Navbar, Container, NavDropdown, Nav, Image, Modal } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Timeline from './Timeline';
 import Sounding from './Sounding';
@@ -8,6 +8,7 @@ import Help from './Help';
 import { fetchIndex, fetchData } from './fetcher';
 import calc from './calc';
 import { dateFormat, dateTimeURLFormat, dateTimeURLParse } from './utils';
+import { timeFormat } from 'd3';
 
 export default function App() {
   const navigate = useNavigate();
@@ -16,14 +17,14 @@ export default function App() {
   const q = new URLSearchParams(location.search);
   const [place, setPlace] = useState(q.get('place') || defaultPlace);
   const [time, setTime] = useState(initialTime(q));
-  const [scrolled, setScrolled] = useState(false);
 
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [helpShown, setHelpShown] = useState(false);
+  const [soundingShown, setSoundingShown] = useState(false);
 
   // Fetch data and calculate on start.
-  useEffect(() => fetchAndCalc(time), [time, scrolled]);
+  useEffect(() => fetchAndCalc(time), [time]);
 
   async function fetchAndCalc(time) {
     const index = await fetchIndex(setError)
@@ -32,15 +33,6 @@ export default function App() {
     const data = await calc(index, rawData);
     console.log('calculated', data);
     setData(data);
-
-    // Scroll timeline all the way to the left.
-    if (!scrolled) {
-      document.getElementById('timeline-container').scrollBy({
-        left: -window.innerWidth,
-        smooth: true,
-      })
-      setScrolled(true)
-    }
   }
 
   // Keep query string aligned with viewed data.
@@ -60,6 +52,11 @@ export default function App() {
     }
     console.log('GOT ERROR', error);
   }, [error]);
+
+  const timeClicked = (t) => {
+    setTime(t);
+    setSoundingShown(true);
+  }
 
   return (
     <>
@@ -100,16 +97,48 @@ export default function App() {
       }
       {
         data != null && (
-          <>
-            <Container id='timeline-container' fluid className='TimelineContainer'>
-              <Timeline data={data[place]} time={time} setTime={setTime} />
-            </Container>
-            <Sounding data={data[place]} time={time} setError={setError} />
-          </>
+          <Container>
+            <>
+              {Object.values(data[place]).map(day => (
+                <Timeline
+                  key={day.day.text}
+                  day={day}
+                  time={time}
+                  setTime={timeClicked}
+                />
+              ))}
+            </>
+          </Container>
         )
       }
       {
-        helpShown && <Help show={helpShown} setShow={setHelpShown} />
+        soundingShown && (
+          <Modal
+            show={soundingShown}
+            fullscreen={true}
+            scrollable={false}
+            animation={false}
+            onClick={() => setSoundingShown(false)}>
+            <Modal.Header>
+              <Modal.Title>
+                {`Sounding for ${dateTimeURLFormat(time)}`}
+              </Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <Sounding data={data[place]} time={time} setError={setError} />
+            </Modal.Body>
+          </Modal>
+        )
+      }
+      {
+        helpShown && (
+          <Modal
+            show={helpShown}
+            fullscreen={true}
+            onClick={() => setHelpShown(false)}>
+            <Help />
+          </Modal>
+        )
       }
     </>
   );
