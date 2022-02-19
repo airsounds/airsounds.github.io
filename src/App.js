@@ -15,24 +15,26 @@ export default function App() {
 
   const q = new URLSearchParams(location.search);
   const [place, setPlace] = useState(q.get('place') || defaultPlace);
-  const [time, setTime] = useState(initialTime(q));
+  const [time, setTime] = useState(initialTime(q.get('time')));
 
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [helpShown, setHelpShown] = useState(false);
   const [soundingShown, setSoundingShown] = useState(false);
 
-  // Fetch data and calculate on start.
-  useEffect(() => fetchAndCalc(time), [time]);
-
-  async function fetchAndCalc(time) {
-    const index = await fetchIndex(setError)
-    const rawData = await fetchData(time, setError);
-    console.log('raw', rawData);
-    const data = await calc(index, rawData);
-    console.log('calculated', data);
-    setData(data);
-  }
+  // Fetch data and calculate.
+  // The data is fetched for all places, so it is only depenedent on the time.
+  useEffect(() => {
+    async function fetchAndCalc(time) {
+      const index = await fetchIndex(setError)
+      const rawData = await fetchData(time, setError);
+      console.log('raw', rawData);
+      const data = await calc(index, rawData);
+      console.log('calculated', data);
+      setData(data);
+    }
+    fetchAndCalc(time);
+  }, [time]);
 
   // Keep query string aligned with viewed data.
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function App() {
     if (place) { parts.push(`place=${place}`); }
     if (time) { parts.push(`time=${dateTimeURLFormat(time)}`); }
     if (parts.length > 0) {
-      navigate(`?${parts.join('&')}`);
+      navigate(`/?${parts.join('&')}`, { replace: true });
     }
   }, [time, place, navigate]);
 
@@ -152,8 +154,7 @@ const placeNameTranslate = new Map([
   ['bet-shaan', 'בית שאן']
 ]);
 
-function initialTime(q) {
-  const queryTime = q.get('time');
+function initialTime(queryTime) {
   return queryTime ? dateTimeURLParse(queryTime) : noonToday();
 }
 
