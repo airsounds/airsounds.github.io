@@ -224,9 +224,12 @@ export default function Timeline({ day, time, setTime }) {
                 .y(s => tempScale(s.virtual.t0))
             );
 
+        // Clips for trigger areas. Below and above the temperature line.
+        const belowTemp = `BelowTemp${day.day.text}`
+        const aboveTemp = `AboveTemp${day.day.text}`
         svg.append('clipPath')
             .datum(samples)
-            .attr('id', 'BelowTemp')
+            .attr('id', belowTemp)
             .append('path')
             .attr('d', d3.area()
                 .defined(s => s.virtual?.t0)
@@ -237,7 +240,7 @@ export default function Timeline({ day, time, setTime }) {
 
         svg.append('clipPath')
             .datum(samples)
-            .attr('id', 'AboveTemp')
+            .attr('id', aboveTemp)
             .append('path')
             .attr('d', d3.area()
                 .defined(s => s.virtual?.t0)
@@ -246,13 +249,15 @@ export default function Timeline({ day, time, setTime }) {
                 .y1(s => tempScale(s.virtual.t0))
             );
 
+        // "Good" virtual trigger area. Above termpature and below 
+        // virtual trigger termperature.
         svg
             .append('path')
             .datum(samples)
             .attr('fill', colors.good)
             .attr('stroke-width', 0)
             .attr('opacity', 0.2)
-            .attr('clip-path', 'url(#AboveTemp)')
+            .attr('clip-path', `url(#${aboveTemp})`)
             .attr('d', d3.area()
                 .defined(s => s.virtual?.trig && s.virtual?.t0)
                 .x((s, i) => tScale(i))
@@ -260,13 +265,15 @@ export default function Timeline({ day, time, setTime }) {
                 .y1(s => tempScale(s.virtual.trig))
             );
 
+        // "Good" measured trigger area. Above termpature and below 
+        // measured trigger termperature.
         svg
             .append('path')
             .datum(samples)
             .attr('fill', colors.good)
             .attr('stroke-width', 0)
             .attr('opacity', 0.2)
-            .attr('clip-path', 'url(#AboveTemp)')
+            .attr('clip-path', `url(#${aboveTemp})`)
             .attr('d', d3.area()
                 .defined(s => s.measured?.trig && s.measured?.t0)
                 .x((s, i) => tScale(i))
@@ -274,20 +281,22 @@ export default function Timeline({ day, time, setTime }) {
                 .y1(s => tempScale(s.measured.trig))
             );
 
+        // "Bad" trigger area. Above trigger termprature and below temperature.
         svg
             .append('path')
             .datum(samples)
             .attr('fill', colors.bad)
             .attr('stroke-width', 0)
             .attr('opacity', 0.2)
-            .attr('clip-path', 'url(#BelowTemp)')
+            .attr('clip-path', `url(#${belowTemp})`)
             .attr('d', d3.area()
                 .defined(s => s.virtual?.trig && s.virtual?.t0)
                 .x((s, i) => tScale(i))
-                .y0(s => tempScale(s.virtual.t0))
-                .y1(s => tempScale(s.virtual.trig))
+                .y0(s => tempScale(s.virtual.trig))
+                .y1(s => tempScale(s.virtual.t0))
             );
 
+        // Virtual trigger temperature.
         svg
             .append('path')
             .datum(samples)
@@ -300,6 +309,7 @@ export default function Timeline({ day, time, setTime }) {
                 .y(s => tempScale(s.virtual.trig))
             );
 
+        // Measured trigger temperature.
         svg
             .append('path')
             .datum(samples)
