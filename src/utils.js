@@ -23,8 +23,8 @@ export function hourFormat(date) {
     return `${pad(date.getHours())}`;
 }
 
-export function dateFormatPlotDay(date) {
-    return `${weekdayName.get(date.getDay())} ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
+export function dateFormatPlotDay(t, date) {
+    return `${t(weekdayName.get(date.getDay()))} ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
 }
 
 const weekdayName = new Map([

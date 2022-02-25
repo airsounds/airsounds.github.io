@@ -2,7 +2,7 @@ import React from 'react';
 import "./App.css"
 import useD3 from './hooks/useD3';
 import * as d3 from 'd3';
-import { dateFormatPlotDay, altMax, tempMax, dateTimeURLFormat, hourFormat, colors } from './utils';
+import { altMax, tempMax, dateTimeURLFormat, hourFormat, colors } from './utils';
 
 export default function Timeline({ day, time, setTime }) {
     const ref = useD3(({ svg, rect }) => {
@@ -27,14 +27,13 @@ export default function Timeline({ day, time, setTime }) {
         const n = samples.length;
         const hours = samples.map(s => hourFormat(s.t));
 
-        const margin = { top: 36, right: 5, bottom: 5, left: 20 };
+        const margin = { top: 24, right: 5, bottom: 5, left: 30 };
         const plotArea = {
             x: [margin.left, margin.left + rect.width - margin.right],
             y: [rect.height - margin.bottom, margin.top],
         }
         // Width of each hour in the plot area.
         const hourWidth = (plotArea.x[1] - plotArea.x[0]) / n;
-        const dayLabelOffset = 14; // Put the day lables above the hour labels.
 
         const tScale = d3
             .scaleLinear()
@@ -108,13 +107,6 @@ export default function Timeline({ day, time, setTime }) {
                 .selectAll('text')
                 .style('font-size', '8px')
                 .attr('text-anchor', 'middle')));
-
-        svg.append('g')
-            .append('text')
-            .attr('dy', '1.5em')
-            .style('font-size', '10px')
-            .attr('text-anchor', 'end')
-            .text(dateFormatPlotDay(day.day.t));
 
         const plotAreaWidth = plotArea.x[1] - plotArea.x[0] - hourWidth
         const xTicksOpacity = 0.2;
@@ -330,10 +322,10 @@ export default function Timeline({ day, time, setTime }) {
             const button = svg
                 .append('rect')
                 .attr('class', 'buttons')
-                .attr('x', tScale(i) - hourWidth / 2)
-                .attr('y', dayLabelOffset + 3)
-                .attr('width', hourWidth)
-                .attr('height', plotArea.y[0] - plotArea.y[1] + dayLabelOffset + 4)
+                .attr('x', tScale(i) - hourWidth / 2 + 2)
+                .attr('y', 2)
+                .attr('width', hourWidth - 4)
+                .attr('height', rect.height - 4)
                 .attr('fill', colors.selected)
                 .attr('stroke', 'black')
                 .attr('stroke-width', 1)

@@ -1,14 +1,13 @@
 import './App.css';
-import { translations } from './i18n'
 import { useEffect, useState } from 'react';
-import { Navbar, Container, NavDropdown, Nav, Image, Modal } from 'react-bootstrap';
+import { Navbar, Container, NavDropdown, Nav, Image, Modal, Card, CardGroup, Row, Col } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Timeline from './Timeline';
 import Sounding from './Sounding';
 import Help from './Help';
 import { fetchIndex, fetchData } from './fetcher';
 import calc from './calc';
-import { dateFormat, dateTimeURLFormat, dateTimeURLParse } from './utils';
+import { dateFormat, dateTimeURLFormat, dateTimeURLParse, dateFormatPlotDay } from './utils';
 import { useTranslation } from 'react-i18next';
 
 
@@ -121,13 +120,33 @@ export default function App() {
           <Container>
             <>
               {Object.values(data[place]).map(day => (
-                <Timeline
-                  key={day.day.text}
-                  day={day}
-                  time={time}
-                  setTime={timeClicked}
-                />
-              ))}
+                <Row className='justify-content-center'>
+                  <Col
+                    style={{
+                      width: '100%',
+                      maxWidth: '600px',
+                      marginTop: '16px',
+                    }}>
+                    <Card className='text-center'>
+                      <Card.Header>
+                        {dateFormatPlotDay(t, day.day.t)}
+                      </Card.Header>
+                      <Card.Body style={{
+                        height: '200px',
+                        paddingLeft: '0px',
+                        paddingRight: '0px',
+                      }}>
+                        <Timeline
+                          day={day}
+                          time={time}
+                          setTime={timeClicked}
+                        />
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                </Row>
+              ))
+              }
             </>
           </Container>
         )
