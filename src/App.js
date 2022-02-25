@@ -1,6 +1,6 @@
 import './App.css';
 import { useEffect, useState } from 'react';
-import { Navbar, Container, NavDropdown, Nav, Image, Modal, Card, CardGroup, Row, Col } from 'react-bootstrap';
+import { Navbar, Container, NavDropdown, Nav, Image, Modal, Card, Row, Col } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Timeline from './Timeline';
 import Sounding from './Sounding';
@@ -24,7 +24,7 @@ export default function App() {
   const q = new URLSearchParams(location.search);
   const [place, setPlace] = useState(q.get('place') || defaultPlace);
   const [time, setTime] = useState(initialTime(q.get('time')));
-  const [lang, setLang] = useState(q.get('lang') || defaultLang);
+  const [lang] = useState(q.get('lang') || defaultLang);
 
   const [data, setData] = useState(null);
   const [index, setIndex] = useState(null);
