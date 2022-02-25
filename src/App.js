@@ -13,6 +13,8 @@ import { useTranslation } from 'react-i18next';
 
 const defaultLang = 'he';
 const defaultPlace = 'megido';
+const timelineHeight = '300px';
+const timelineMaxWidth = '600px'
 
 export default function App() {
   const navigate = useNavigate();
@@ -124,7 +126,7 @@ export default function App() {
                   <Col
                     style={{
                       width: '100%',
-                      maxWidth: '600px',
+                      maxWidth: timelineMaxWidth,
                       marginTop: '16px',
                     }}>
                     <Card className='text-center'>
@@ -132,7 +134,7 @@ export default function App() {
                         {dateFormatPlotDay(t, day.day.t)}
                       </Card.Header>
                       <Card.Body style={{
-                        height: '200px',
+                        height: timelineHeight,
                         paddingLeft: '0px',
                         paddingRight: '0px',
                       }}>
