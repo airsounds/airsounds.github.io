@@ -161,9 +161,9 @@ export default function App() {
             scrollable={false}
             animation={false}
             onClick={() => setSoundingShown(false)}>
-            <Modal.Header>
+            <Modal.Header className='justify-content-center'>
               <Modal.Title>
-                {`t('Chart for') ${dateTimeURLFormat(time)}`}
+                {`${t('Chart for')} ${dateTimeURLFormat(time)}`}
               </Modal.Title>
             </Modal.Header>
             <Modal.Body>
