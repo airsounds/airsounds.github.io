@@ -1,4 +1,5 @@
 import './App.css';
+import { translations } from './i18n'
 import { useEffect, useState } from 'react';
 import { Navbar, Container, NavDropdown, Nav, Image, Modal } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -8,16 +9,24 @@ import Help from './Help';
 import { fetchIndex, fetchData } from './fetcher';
 import calc from './calc';
 import { dateFormat, dateTimeURLFormat, dateTimeURLParse } from './utils';
+import { useTranslation } from 'react-i18next';
+
+
+const defaultLang = 'he';
+const defaultPlace = 'megido';
 
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t, i18n } = useTranslation();
 
   const q = new URLSearchParams(location.search);
   const [place, setPlace] = useState(q.get('place') || defaultPlace);
   const [time, setTime] = useState(initialTime(q.get('time')));
 
+
   const [data, setData] = useState(null);
+  const [index, setIndex] = useState(null);
   const [error, setError] = useState(null);
   const [helpShown, setHelpShown] = useState(false);
   const [soundingShown, setSoundingShown] = useState(false);
@@ -31,10 +40,15 @@ export default function App() {
       console.log('raw', rawData);
       const data = await calc(index, rawData);
       console.log('calculated', data);
+      setIndex(index);
       setData(data);
     }
     fetchAndCalc(time);
   }, [time]);
+
+  useEffect(() => {
+    i18n.changeLanguage(q.get('lang') || defaultLang);
+  }, [i18n])
 
   // Keep query string aligned with viewed data.
   useEffect(() => {
@@ -65,7 +79,7 @@ export default function App() {
         <Container>
           <Navbar.Brand href='#' onClick={() => setHelpShown(true)}>
             <Image src='/logo.png' width='24' height='24' className='d-inline-block' alt='logo' />
-            {' '}Airsounds
+            {' '}{t('Airsounds')}
           </Navbar.Brand>
           {
             dateFormat(time) < dateFormat(new Date()) &&
@@ -74,13 +88,14 @@ export default function App() {
               setData(null);
             }}>Today</Nav.Link>
           }
-          <NavDropdown title={placeNameTranslate.get(place)} id='collasible-nav-dropdown'>
+          <NavDropdown title={t(place)} id='collasible-nav-dropdown'>
             {
-              Array.from(placeNameTranslate.entries())
-                .filter(([en]) => en !== place)
-                .map(([en, he]) => (
-                  <NavDropdown.Item key={en} onClick={() => setPlace(en)}>
-                    {he}
+              index?.Locations
+                .map(loc => loc.name)
+                .filter(name => name !== place)
+                .map(name => (
+                  <NavDropdown.Item key={name} onClick={() => setPlace(name)}>
+                    {t(name)}
                   </NavDropdown.Item>
                 ))
             }
@@ -122,7 +137,7 @@ export default function App() {
             onClick={() => setSoundingShown(false)}>
             <Modal.Header>
               <Modal.Title>
-                {`Sounding for ${dateTimeURLFormat(time)}`}
+                {`t('Chart for') ${dateTimeURLFormat(time)}`}
               </Modal.Title>
             </Modal.Header>
             <Modal.Body>
@@ -144,15 +159,6 @@ export default function App() {
     </>
   );
 }
-
-
-const defaultPlace = 'megido';
-const placeNameTranslate = new Map([
-  ['megido', 'מגידו'],
-  ['sde-teiman', 'שדה תימן'],
-  ['zefat', 'צפת'],
-  ['bet-shaan', 'בית שאן']
-]);
 
 function initialTime(queryTime) {
   return queryTime ? dateTimeURLParse(queryTime) : noonToday();

@@ -5,6 +5,13 @@ import App from './App';
 import reportWebVitals from './reportWebVitals';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { BrowserRouter as Router } from 'react-router-dom';
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import { resources } from './i18n';
+
+i18n
+  .use(initReactI18next)
+  .init({ resources });
 
 ReactDOM.render(
   <React.StrictMode>
