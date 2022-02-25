@@ -23,7 +23,7 @@ export default function App() {
   const q = new URLSearchParams(location.search);
   const [place, setPlace] = useState(q.get('place') || defaultPlace);
   const [time, setTime] = useState(initialTime(q.get('time')));
-
+  const [lang, setLang] = useState(q.get('lang') || defaultLang);
 
   const [data, setData] = useState(null);
   const [index, setIndex] = useState(null);
@@ -46,19 +46,24 @@ export default function App() {
     fetchAndCalc(time);
   }, [time]);
 
+  // Set the chosen lang as the translation language.
   useEffect(() => {
-    i18n.changeLanguage(q.get('lang') || defaultLang);
-  }, [i18n])
+    i18n.changeLanguage(lang);
+    const html = document.getElementsByTagName('html')[0]
+    html.setAttribute('lang', lang);
+    html.setAttribute('dir', lang === 'he' ? 'rtl' : 'ltr');
+  }, [i18n, lang])
 
   // Keep query string aligned with viewed data.
   useEffect(() => {
     const parts = []
     if (place) { parts.push(`place=${place}`); }
     if (time) { parts.push(`time=${dateTimeURLFormat(time)}`); }
+    if (lang) { parts.push(`lang=${lang}`); }
     if (parts.length > 0) {
       navigate(`/?${parts.join('&')}`, { replace: true });
     }
-  }, [time, place, navigate]);
+  }, [time, place, lang, navigate]);
 
   // Handle errors.
   useEffect(() => {
