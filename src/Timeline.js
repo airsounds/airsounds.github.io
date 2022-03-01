@@ -4,7 +4,7 @@ import useD3 from './hooks/useD3';
 import useRect from './hooks/useRect';
 import * as d3 from 'd3';
 import { altMax, tempMax, dateTimeURLFormat, dateFormat, hourFormat, colors } from './utils';
-import { Modal, Image } from 'react-bootstrap';
+import { Modal, Image, Button } from 'react-bootstrap';
 import Sounding from './Sounding';
 import { fetchDay } from './fetcher';
 import calc from './calc';
@@ -375,7 +375,6 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
                 .attr('ry', 3)
                 .attr('opacity', opacity);
             button.on('click', () => {
-                console.log('Setting time to', dateTimeURLFormat(s.t));
                 setSelectedTime(s.t);
                 setSoundingShown(true);
             });
@@ -408,6 +407,9 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
                         <Modal.Body>
                             <Sounding data={data[place].hours} time={selectedTime} setError={setError} />
                         </Modal.Body>
+                        <Modal.Footer>
+                            <Button>{t('Close')}</Button>
+                        </Modal.Footer>
                     </Modal>
                 )
             }

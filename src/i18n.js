@@ -1,8 +1,11 @@
 export const resources = {
     he: {
         translation: {
-            "Airsounds": 'איירסאונד',
+            'Airsounds': 'איירסאונד',
             'Chart for': 'טכיגרמה עבור',
+            'Today': 'עבור להיום',
+            'Help': 'עזרה',
+            'Close': 'סגור',
 
             // Place names.
             'megido': 'מגידו',

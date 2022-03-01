@@ -100,15 +100,18 @@ export default function App() {
     <>
       <Navbar expand='lg' bg='light'>
         <Container>
-          <Navbar.Brand href='#' onClick={() => setHelpShown(true)}>
+          <Navbar.Brand href='/'>
             <Image src='/logo.png' width='24' height='24' className='d-inline-block' alt='logo' />
             {' '}{t('Airsounds')}
           </Navbar.Brand>
           {
-            dateFormat(time) < dateFormat(new Date()) &&
-            <Nav.Link href='#' onClick={() => {
-              setTime(noonToday());
-            }}>Today</Nav.Link>
+            dateFormat(time) < dateFormat(new Date()) && (
+              <Nav.Link
+                href='#'
+                onClick={() => { setTime(noonToday()); }}>
+                {t('Today')}
+              </Nav.Link>
+            )
           }
           <NavDropdown title={t(place)} id='collasible-nav-dropdown'>
             {
@@ -122,6 +125,11 @@ export default function App() {
                 ))
             }
           </NavDropdown>
+          <Nav.Link
+            href='#'
+            onClick={() => setHelpShown(true)}>
+            {t('Help')}
+          </Nav.Link>
         </Container>
       </Navbar>
 

@@ -1,6 +1,8 @@
-import { Image, ListGroup, Modal } from 'react-bootstrap';
+import { Image, ListGroup, Modal, Button } from 'react-bootstrap';
+import { useTranslation } from 'react-i18next';
 
 export default function Help() {
+    const { t } = useTranslation();
     return (
         <>
             <Modal.Header>
@@ -8,13 +10,15 @@ export default function Help() {
             </Modal.Header>
             <Modal.Body>
                 <p >
-                    באתר זה מוצגים נתוני בלון וירטואלי ונתוני טמפרטורה שנאספים מאתרים שונים.
+                    באתר זה מוצגים נתוני טכיגרמה משולבים מבלון שנשלח על ידיד הרשות המטאורולוגית (מאתר NOAA),
+                    נתוני בלון "וירטואלי" שמחושבים על ידי אתר אוניוורסיטת וויומינג,
+                    ונתוני תחזרית טמפרטורה מאתר הרשות המטאורולוגית.
                 </p>
                 <p className='card-text rtl'>
-                    ניתן לבחור בתפריט העליון את המיקום אליו ניתנת התחזית
-                    בחלק העליון של המסך ישנה תחזית לימים הקרובים.
-                    בחלק התחתון ישנו פרוט הטכיגרמה עבור השעה שמסומנת בחלק העליון.
-                    ניתן ללחץ בחלק העליון על שעה אחרת על מנת להציג את הפירוט עבורה בחלק התחתון.
+                    בכותרת האתר ניתן לבחור את המיקום אליו מתבקש החיזוי.
+                </p>
+                <p className='card-text rtl'>
+                    בחלק התחתון מופיעים ארבעה גרפים עבור ארבעה ימי תחזית.
                 </p>
                 <Image src="/timeline-legend.png" width="100%" style={{ 'max-width': '500px' }} />
                 <p className='card-text rtl'>
@@ -27,6 +31,9 @@ export default function Help() {
                     השטח האדום מתאר את מפל הטמפרטורה מהטמפרטורה המקסימלית החזויה לאותה שעה בגובה המדידה, ועד טמפרטורה הנמוכה ב 3 מעלות ממנה.
                     השטח החום מתאר את הקרקע.
                 </p>
+                <p className='card-text rtl'>
+                    בלחיצה על אזור בגרף, תוצר טכיגרמה מפורטת עבור אותה שעה באותו יום.
+                </p>
                 <Image src="/sounding-legend.png" width="100%" style={{ 'max-width': '600px' }} />
                 <h5>מושגים</h5>
                 <ListGroup dir='ltr'>
@@ -37,6 +44,9 @@ export default function Help() {
                     <ListGroup.Item><b>Trigger</b>: The Ground temperature required required for good conditions.</ListGroup.Item>
                 </ListGroup>
             </Modal.Body>
+            <Modal.Footer>
+                <Button>{t('Close')}</Button>
+            </Modal.Footer>
         </>
     )
 }
