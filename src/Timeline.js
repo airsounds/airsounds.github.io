@@ -1,29 +1,71 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import "./App.css"
 import useD3 from './hooks/useD3';
+import useRect from './hooks/useRect';
 import * as d3 from 'd3';
-import { altMax, tempMax, dateTimeURLFormat, hourFormat, colors } from './utils';
+import { altMax, tempMax, dateTimeURLFormat, dateFormat, hourFormat, colors } from './utils';
+import { Modal, Image } from 'react-bootstrap';
+import Sounding from './Sounding';
+import { fetchDay } from './fetcher';
+import calc from './calc';
+import { useTranslation } from 'react-i18next';
 
-export default function Timeline({ day, time, setTime }) {
-    const ref = useD3(({ svg, rect }) => {
-        if (!day) {
+export default function Timeline({ place, date, selectedTime, locations, setSelectedTime, setError }) {
+    const { t } = useTranslation();
+    const { ref, svg } = useD3();
+    const { rect } = useRect(ref);
+
+    const [rawData, setRawData] = useState(null);
+    const [data, setData] = useState(null);
+    const [samples, setSamples] = useState(null);
+    const [soundingShown, setSoundingShown] = useState(false);
+
+    // Fetch data and calculate.
+    // The data is fetched for all places, so it is only depenedent on the time.
+    useEffect(() => {
+        if (!date) {
+            return;
+        }
+        async function fetchRawData() {
+            const rawData = await fetchDay(date, setError)
+            console.debug(`raw ${dateFormat(date)}:`, rawData);
+            setRawData(rawData);
+        }
+        fetchRawData();
+    }, [date, setError]);
+
+    useEffect(() => {
+        if (!rawData || !locations) {
+            return;
+        }
+        async function calcData() {
+            const data = await calc(locations, rawData);
+            console.debug(`calculated ${dateFormat(date)}:`, data);
+            setData(data);
+
+            const samples = Object.entries(data[place].hours)
+                .map(([hour, hourData]) => {
+                    const t = new Date(date.getTime());
+                    t.setHours(parseInt(hour));
+                    return {
+                        t: t,
+                        virtual: hourData.virtual,
+                        measured: hourData.measured,
+                    }
+                })
+                .sort((a, b) => a.t - b.t);
+            console.debug(`samples ${dateFormat(date)}:`, samples);
+            setSamples(samples);
+        }
+        calcData();
+    }, [place, date, rawData, locations]);
+
+    useEffect(() => {
+        if (!rect || !samples || !svg) {
             return;
         }
 
         svg.selectAll('*').remove();
-
-        const samples = Object.entries(day.hours)
-            .map(([hour, hourData]) => {
-                const t = new Date(day.day.t.getTime());
-                t.setHours(parseInt(hour));
-                return {
-                    t: t,
-                    virtual: hourData.virtual,
-                    measured: hourData.measured,
-                }
-            })
-            .sort((a, b) => a.t - b.t);
-        console.log('samples', samples);
         const n = samples.length;
         const hours = samples.map(s => hourFormat(s.t));
 
@@ -217,8 +259,8 @@ export default function Timeline({ day, time, setTime }) {
             );
 
         // Clips for trigger areas. Below and above the temperature line.
-        const belowTemp = `BelowTemp${day.day.text}`
-        const aboveTemp = `AboveTemp${day.day.text}`
+        const belowTemp = `BelowTemp${dateFormat(date)}`
+        const aboveTemp = `AboveTemp${dateFormat(date)}`
         svg.append('clipPath')
             .datum(samples)
             .attr('id', belowTemp)
@@ -317,7 +359,7 @@ export default function Timeline({ day, time, setTime }) {
 
         // Draw a button for each hour.
         samples.forEach((s, i) => {
-            const selected = dateTimeURLFormat(s.t) === dateTimeURLFormat(time);
+            const selected = dateTimeURLFormat(s.t) === dateTimeURLFormat(selectedTime);
             const opacity = selected ? 0.2 : 0;
             const button = svg
                 .append('rect')
@@ -332,13 +374,43 @@ export default function Timeline({ day, time, setTime }) {
                 .attr('rx', 3)
                 .attr('ry', 3)
                 .attr('opacity', opacity);
-            button.on('click', () => setTime(s.t));
+            button.on('click', () => {
+                console.log('Setting time to', dateTimeURLFormat(s.t));
+                setSelectedTime(s.t);
+                setSoundingShown(true);
+            });
             button.on('mouseover', () => button.attr('opacity', selected ? opacity : 0.1));
             button.on('mouseout', () => button.attr('opacity', opacity));
         });
-    }, [day, time]);
+    }, [svg, rect, samples, date, selectedTime, setSelectedTime]);
     return (
-        <svg ref={ref} className="Timeline">
-        </svg>
+        <>
+            <svg ref={ref} className="Timeline">
+            </svg>
+            {
+                samples == null && (
+                    <Image src='/logo.png' className='App-logo' alt='logo' />
+                )
+            }
+            {
+                soundingShown && (
+                    <Modal
+                        show={soundingShown}
+                        fullscreen={true}
+                        scrollable={false}
+                        animation={false}
+                        onClick={() => setSoundingShown(false)}>
+                        <Modal.Header className='justify-content-center'>
+                            <Modal.Title>
+                                {`${t('Chart for')} ${dateTimeURLFormat(date)}`}
+                            </Modal.Title>
+                        </Modal.Header>
+                        <Modal.Body>
+                            <Sounding data={data[place].hours} time={selectedTime} setError={setError} />
+                        </Modal.Body>
+                    </Modal>
+                )
+            }
+        </>
     );
 }

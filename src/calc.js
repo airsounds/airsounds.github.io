@@ -1,55 +1,43 @@
 import { max, min, limitsText, intersect, x, altMax, M, altTrigger, yTick, plotHours } from './utils';
 
 // Returns map of place to date to date data, which includes hours which is hour to hour data.
-export default async function calc(index, days) {
-
-    // Construct the measured data. map[place][date]measured;
+export default async function calc(locations, raw) {
+    // Construct the measured data as map[place]measured.
     const measuredData = {};
-    days.forEach(day =>
-        Object.values(day.hours).forEach(places =>
-            Object.entries(places).forEach(([place, sources]) => {
-                if (!measuredData[place]) {
-                    measuredData[place] = {};
-                }
-                if (sources.uwyo) {
-                    measuredData[place][day.text] = sources.uwyo;
-                }
-            })));
+    Object.values(raw).forEach(places =>
+        Object.entries(places).forEach(([place, sources]) => {
+            if (sources.uwyo) {
+                measuredData[place] = sources.uwyo;
+            }
+        }));
 
     const data = {};
-    days.forEach(day => {
-        Object.entries(day.hours).forEach(([hour, places]) => {
-            if (!plotHours.includes(parseInt(hour))) {
+    Object.entries(raw).forEach(([hour, places]) => {
+        if (!plotHours.includes(parseInt(hour))) {
+            return;
+        }
+        Object.entries(places).forEach(([place, sources]) => {
+            const placeInfo = locations.find(loc => loc.name === place);
+            if (!placeInfo) {
                 return;
             }
-            Object.entries(places).forEach(([place, sources]) => {
-                const placeInfo = index.Locations.find(loc => loc.name === place);
-                if (!placeInfo) {
-                    return;
-                }
-                if (!data[place]) {
-                    data[place] = {};
-                }
-                if (!data[place][day.text]) {
-                    data[place][day.text] = {
-                        day: day,
-                        hours: {},
-                    };
-                }
-                if (measuredData[placeInfo.uwyo_station]) {
-                    sources.uwyo = measuredData[placeInfo.uwyo_station][day.text];
-                }
-                // Calc hourly data.
-                data[place][day.text].hours[hour] = calcHourData(placeInfo, hour, sources)
-            });
+            if (!data[place]) {
+                data[place] = {
+                    hours: {},
+                    daily: null,
+                };
+            }
+            if (measuredData[placeInfo.uwyo_station]) {
+                sources.uwyo = measuredData[placeInfo.uwyo_station];
+            }
+            // Calc hourly data.
+            data[place].hours[hour] = calcHourData(placeInfo, hour, sources)
         });
     });
 
     // Calc daily data.
-    Object.values(data).forEach(days => {
-        Object.values(days).forEach(dayData => {
-            dayData.data = calcDayData(dayData.hours);
-        })
+    Object.values(data).forEach(placeData => {
+        placeData.daily = calcDailyData(placeData.hours);
     });
     return data;
 }
@@ -121,7 +109,7 @@ function calcHourSounding(placeInfo, hour, forecast, soundingData) {
     return data;
 }
 
-function calcDayData(hours) {
+function calcDailyData(hours) {
     const virtual = [];
     const measured = [];
     Object.values(hours).forEach(hourData => {

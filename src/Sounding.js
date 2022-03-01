@@ -1,19 +1,23 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import useD3 from './hooks/useD3';
 import * as d3 from 'd3';
-import { altMax, tempMax, windMax, dateFormat, xTick, yTick, y, colors } from './utils';
+import { altMax, tempMax, windMax, xTick, yTick, y, colors } from './utils';
 import "./App.css"
+import useRect from './hooks/useRect';
 
 export default function Sounding({ data, time, setError }) {
-    const ref = useD3(({ svg, rect }) => {
-        if (!data || !time) {
+    const { ref, svg } = useD3();
+    const { rect } = useRect(ref);
+
+    useEffect(() => {
+        if (!data || !time || !rect) {
             return;
         }
 
         svg.selectAll('*').remove();
 
         // Manipulate data.
-        const dateTimeData = data[dateFormat(time)].hours[time.getHours()]
+        const dateTimeData = data[time.getHours()]
         if (!dateTimeData) {
             return
         }
@@ -378,7 +382,7 @@ export default function Sounding({ data, time, setError }) {
                 .attr('stroke-width', 4)
                 .attr('stroke-linejoin', 'round');
         }
-    }, [data, time]);
+    }, [svg, rect, data, time, setError]);
 
     return (
         <svg ref={ref} className='Sounding' >

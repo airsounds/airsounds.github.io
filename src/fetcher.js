@@ -1,5 +1,4 @@
 import { dateFormat } from './utils';
-const forecastDays = 4;
 
 const prefix = 'https://airsounds.github.io/data';
 
@@ -17,30 +16,8 @@ export async function fetchIndex(setError) {
     }
 }
 
-export async function fetchData(t, setError) {
-    // Iterate over time slots. Start from today's morning.
-    t = new Date(t.getTime());
-    if (dateFormat(t) > dateFormat(new Date())) {
-        t = new Date();
-    }
-
-    const days = []
-    for (let i = 0; i < forecastDays; i++) {
-        days.push(new Date(t.getTime()));
-        t.setDate(t.getDate() + 1);
-    }
-
-    return await Promise.all(days.map(async t => {
-        const text = dateFormat(t);
-        return {
-            t: t,
-            text: text,
-            hours: await fetchDay(text, setError),
-        };
-    }));
-}
-
-async function fetchDay(dateStr, setError) {
+export async function fetchDay(t, setError) {
+    const dateStr = dateFormat(t);
     const path = `${prefix}/${dateStr.replaceAll('-', '/')}.json`;
     console.debug(`Fetching day ${path}`);
     const resp = await fetch(path);
