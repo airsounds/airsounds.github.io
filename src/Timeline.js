@@ -403,11 +403,13 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
                             <Modal.Title>
                                 {`${t('Chart for')} ${dateTimeURLFormat(date)}`}
                             </Modal.Title>
-                            <Button dataDismiss="modal">{t('Close')}</Button>
                         </Modal.Header>
                         <Modal.Body>
                             <Sounding data={data[place].hours} time={selectedTime} setError={setError} />
                         </Modal.Body>
+                        <Modal.Footer>
+                            <Button>{t('Close')}</Button>
+                        </Modal.Footer>
                     </Modal>
                 )
             }

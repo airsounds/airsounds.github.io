@@ -7,7 +7,6 @@ import Help from './Help';
 import { fetchIndex } from './fetcher';
 import { dateFormat, dateTimeURLFormat, dateTimeURLParse, dateFormatPlotDay } from './utils';
 import { useTranslation } from 'react-i18next';
-import AddToHomeScreen from '@ideasio/add-to-homescreen-react';
 
 
 const defaultLang = 'he';
@@ -131,7 +130,6 @@ export default function App() {
             onClick={() => setHelpShown(true)}>
             {t('Help')}
           </Nav.Link>
-          <AddToHomeScreen />
         </Container>
       </Navbar>
 
