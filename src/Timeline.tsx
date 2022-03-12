@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { LegacyRef, useEffect, useState } from 'react';
 import "./App.css"
 import useD3 from './hooks/useD3';
 import useRect from './hooks/useRect';
@@ -7,43 +7,54 @@ import { altMax, tempMax, dateTimeURLFormat, dateFormat, hourFormat, colors } fr
 import { Modal, Image, Button } from 'react-bootstrap';
 import Sounding from './Sounding';
 import { fetchDay } from './fetcher';
-import calc from './calc';
+import calc, { CalcData, CalcHourData } from './calc';
 import { useTranslation } from 'react-i18next';
+import { DailyData, LocationData, Errorf } from './data';
 
-export default function Timeline({ place, date, selectedTime, locations, setSelectedTime, setError }) {
+type Props = {
+    place: string;
+    date: Date | null;
+    selectedTime: Date;
+    locations: LocationData[];
+    setSelectedTime: (time: Date) => void;
+    setError: Errorf;
+}
+
+interface Sample extends CalcHourData {
+    t: Date;
+}
+
+export default function Timeline({ place, date, selectedTime, locations, setSelectedTime, setError }: Props) {
     const { t } = useTranslation();
     const { ref, svg } = useD3();
     const { rect } = useRect(ref);
 
-    const [rawData, setRawData] = useState(null);
-    const [data, setData] = useState(null);
-    const [samples, setSamples] = useState(null);
+    const [rawData, setRawData] = useState<DailyData | null>(null);
+    const [data, setData] = useState<CalcData | null>(null);
+    const [samples, setSamples] = useState<Sample[] | null>(null);
     const [soundingShown, setSoundingShown] = useState(false);
 
     // Fetch data and calculate.
     // The data is fetched for all places, so it is only depenedent on the time.
     useEffect(() => {
-        if (!date) {
-            return;
-        }
-        async function fetchRawData() {
+        async function fetchRawData(date: Date) {
             const rawData = await fetchDay(date, setError)
             console.debug(`raw ${dateFormat(date)}:`, rawData);
             setRawData(rawData);
         }
-        fetchRawData();
-    }, [date, setError]);
-
-    useEffect(() => {
-        if (!rawData || !locations) {
+        if (!date) {
             return;
         }
-        async function calcData() {
+        fetchRawData(date);
+    }, [date, rawData, setError]);
+
+    useEffect(() => {
+        async function calcData(date: Date, locations: LocationData[], rawData: DailyData) {
             const data = await calc(locations, rawData);
             console.debug(`calculated ${dateFormat(date)}:`, data);
             setData(data);
 
-            const samples = Object.entries(data[place].hours)
+            const samples = Object.entries(data[place])
                 .map(([hour, hourData]) => {
                     const t = new Date(date.getTime());
                     t.setHours(parseInt(hour));
@@ -53,15 +64,18 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
                         measured: hourData.measured,
                     }
                 })
-                .sort((a, b) => a.t - b.t);
+                .sort((a, b) => a.t.getTime() - b.t.getTime());
             console.debug(`samples ${dateFormat(date)}:`, samples);
             setSamples(samples);
         }
-        calcData();
+        if (!date || !locations || !rawData) {
+            return;
+        }
+        calcData(date, locations, rawData);
     }, [place, date, rawData, locations]);
 
     useEffect(() => {
-        if (!rect || !samples || !svg) {
+        if (!rect || !samples || !svg || !date) {
             return;
         }
 
@@ -93,20 +107,24 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
         const altTicks = 1000; // Each tick is 1k feet.
         const tempTicks = 5; // Each tick is 5 degrees.
 
-        function findMaxAlt() {
-            function allSampleAltValues(s) {
+        function findMaxAlt(samples: Sample[]) {
+            function allSampleAltValues(s: Sample): Array<number | undefined> {
                 return [
-                    s.virtual?.TI, s.virtual?.TIM3, s.virtual?.cloudBase,
-                    s.measured?.TI, s.measured?.TIM3, s.measured?.cloudBase,
+                    s.virtual?.TI,
+                    s.virtual?.TIM3,
+                    s.virtual?.CB,
+                    s.measured?.TI,
+                    s.measured?.TIM3,
+                    s.measured?.CB,
                 ]
             }
-            const maxAlt = Math.max(...samples.flatMap(s => allSampleAltValues(s).filter(v => v)));
+            const maxAlt = Math.max(...samples.flatMap(s => allSampleAltValues(s).filter(v => v) as number[]));
             const maxAltRounded = Math.ceil(maxAlt / altTicks) * altTicks;
             return maxAltRounded
         }
         const altRange = [
             0,
-            Math.min(findMaxAlt(), altMax),
+            Math.min(findMaxAlt(samples), altMax),
         ];
 
         const altScale = d3
@@ -114,21 +132,24 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
             .domain(altRange)
             .range(yAlt);
 
-        function findMaxTemp() {
-            function allSampleTempValues(s) {
+        function findExtremeTemp(samples: Sample[]): [number, number] {
+            function allSampleTempValues(s: Sample): Array<number | undefined> {
                 return [
-                    s.virtual?.t0, s.virtual?.trig,
-                    s.measured?.t0, s.measured?.trig,
+                    s.virtual?.t0,
+                    s.virtual?.trig,
+                    s.measured?.t0,
+                    s.measured?.trig,
                 ]
             }
-            const allValues = samples.flatMap(s => allSampleTempValues(s)).filter(v => v);
+            const allValues = samples.flatMap(s => allSampleTempValues(s)).filter(v => v) as number[];
             const min = Math.floor(Math.min(...allValues) / tempTicks) * tempTicks;
             const max = Math.ceil(Math.max(...allValues) / tempTicks) * tempTicks;
             return [min, max];
         }
+        const samplesExtremeTemps = findExtremeTemp(samples);
         const tempRange = [
-            Math.max(findMaxTemp()[0], 0),
-            Math.min(findMaxTemp()[1], tempMax),
+            Math.max(samplesExtremeTemps[0], 0),
+            Math.min(samplesExtremeTemps[1], tempMax),
         ]
 
         const tempScale = d3
@@ -161,7 +182,7 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
             .call(d3
                 .axisLeft(altScale)
                 .ticks(altTicksN)
-                .tickFormat((d, i) => d === altRange[0] ? '' : `${d / altTicks}k`))
+                .tickFormat((d, i) => d === altRange[0] ? '' : `${d.valueOf() / altTicks}k`))
             .call(g => g.select('.domain').remove())
             .call(g => g.selectAll('.tick line')
                 .attr('stroke-opacity', xTicksOpacity)
@@ -192,11 +213,11 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
             .attr('fill', colors.ground)
             .attr('stroke-width', 0)
             .attr('opacity', 0.5)
-            .attr('d', d3.area()
-                .defined(s => s.virtual?.h0)
+            .attr('d', d3.area<Sample>()
+                .defined(s => Boolean(s.virtual?.h0))
                 .x((s, i) => tScale(i))
-                .y0(s => altScale(s.virtual.h0 > 0 ? 0 : s.virtual.h0 - 10))
-                .y1(s => altScale(s.virtual.h0)));
+                .y0(s => altScale((s.virtual?.h0 || 0) > 0 ? 0 : (s.virtual?.h0 || 0) - 10))
+                .y1(s => altScale((s.virtual?.h0 || 0))));
 
         svg
             .append('path')
@@ -204,11 +225,11 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
             .attr('fill', colors.virtTI)
             .attr('stroke-width', 0)
             .attr('opacity', 0.3)
-            .attr('d', d3.area()
-                .defined(s => s.virtual?.TI && s.virtual?.TIM3)
+            .attr('d', d3.area<Sample>()
+                .defined(s => Boolean(s.virtual?.TI) && Boolean(s.virtual?.TIM3))
                 .x((s, i) => tScale(i))
-                .y0(s => altScale(s.virtual.TIM3))
-                .y1(s => altScale(s.virtual.TI)));
+                .y0(s => altScale(s.virtual?.TIM3 || 0))
+                .y1(s => altScale(s.virtual?.TI || 0)));
 
         svg
             .append('path')
@@ -216,35 +237,34 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
             .attr('fill', colors.measuredTI)
             .attr('stroke-width', 0)
             .attr('opacity', 0.3)
-            .attr('d', d3.area()
-                .defined(s => s?.measured?.TI && s?.measured?.TIM3)
+            .attr('d', d3.area<Sample>()
+                .defined(s => Boolean(s.measured?.TI) && Boolean(s.measured?.TIM3))
                 .x((s, i) => tScale(i))
-                .y0(s => altScale(s.measured.TIM3))
-                .y1(s => altScale(s.measured.TI)));
+                .y0(s => altScale(s.measured?.TIM3 || 0))
+                .y1(s => altScale(s.measured?.TI || 0)));
 
         svg
             .append('path')
             .datum(samples)
             .attr('fill', 'none')
-            .attr('stroke', colors.cloudBase)
+            .attr('stroke', colors.CB)
             .attr('stroke-width', 0.5)
-            .attr('d', d3.line()
-                .defined(s => s.virtual?.cloudBase)
+            .attr('d', d3.line<Sample>()
+                .defined(s => Boolean(s.virtual?.CB))
                 .x((s, i) => tScale(i))
-                .y(s => altScale(s.virtual.cloudBase)));
+                .y(s => altScale(s.virtual?.CB || 0)));
 
         svg
             .append('path')
             .datum(samples)
             .attr('fill', 'none')
-            .attr('stroke', colors.cloudBase)
+            .attr('stroke', colors.CB)
             .attr('stroke-width', 0.5)
             .attr('stroke-dasharray', '4,4')
-            .attr('d', d3.line()
-                .defined(s => s.measured?.cloudBase)
+            .attr('d', d3.line<Sample>()
+                .defined(s => Boolean(s.measured?.CB))
                 .x((s, i) => tScale(i))
-                .y(s => altScale(s.measured?.cloudBase))
-            );
+                .y(s => altScale(s.measured?.CB || 0)));
 
         svg
             .append('path')
@@ -252,11 +272,10 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
             .attr('fill', 'none')
             .attr('stroke', 'red')
             .attr('stroke-width', 0.5)
-            .attr('d', d3.line()
-                .defined(s => s.virtual?.t0)
+            .attr('d', d3.line<Sample>()
+                .defined(s => Boolean(s.virtual?.t0))
                 .x((s, i) => tScale(i))
-                .y(s => tempScale(s.virtual.t0))
-            );
+                .y(s => tempScale(s.virtual?.t0 || 0)));
 
         // Clips for trigger areas. Below and above the temperature line.
         const belowTemp = `BelowTemp${dateFormat(date)}`
@@ -265,23 +284,21 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
             .datum(samples)
             .attr('id', belowTemp)
             .append('path')
-            .attr('d', d3.area()
-                .defined(s => s.virtual?.t0)
+            .attr('d', d3.area<Sample>()
+                .defined(s => Boolean(s.virtual?.t0))
                 .x((s, i) => tScale(i))
                 .y0(0)
-                .y1(s => tempScale(s.virtual.t0))
-            );
+                .y1(s => tempScale(s.virtual?.t0 || 0)));
 
         svg.append('clipPath')
             .datum(samples)
             .attr('id', aboveTemp)
             .append('path')
-            .attr('d', d3.area()
-                .defined(s => s.virtual?.t0)
+            .attr('d', d3.area<Sample>()
+                .defined(s => Boolean(s.virtual?.t0))
                 .x((s, i) => tScale(i))
                 .y0(rect.height)
-                .y1(s => tempScale(s.virtual.t0))
-            );
+                .y1(s => tempScale(s.virtual?.t0 || 0)));
 
         // "Good" virtual trigger area. Above termpature and below 
         // virtual trigger termperature.
@@ -292,12 +309,11 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
             .attr('stroke-width', 0)
             .attr('opacity', 0.2)
             .attr('clip-path', `url(#${aboveTemp})`)
-            .attr('d', d3.area()
-                .defined(s => s.virtual?.trig && s.virtual?.t0)
+            .attr('d', d3.area<Sample>()
+                .defined(s => Boolean(s.virtual?.trig) && Boolean(s.virtual?.t0))
                 .x((s, i) => tScale(i))
-                .y0(s => tempScale(s.virtual.t0))
-                .y1(s => tempScale(s.virtual.trig))
-            );
+                .y0(s => tempScale(s.virtual?.t0 || 0))
+                .y1(s => tempScale(s.virtual?.trig || 0)));
 
         // "Good" measured trigger area. Above termpature and below 
         // measured trigger termperature.
@@ -308,12 +324,11 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
             .attr('stroke-width', 0)
             .attr('opacity', 0.2)
             .attr('clip-path', `url(#${aboveTemp})`)
-            .attr('d', d3.area()
-                .defined(s => s.measured?.trig && s.measured?.t0)
+            .attr('d', d3.area<Sample>()
+                .defined(s => Boolean(s.measured?.trig) && Boolean(s.measured?.t0))
                 .x((s, i) => tScale(i))
-                .y0(s => tempScale(s.measured.t0))
-                .y1(s => tempScale(s.measured.trig))
-            );
+                .y0(s => tempScale(s.measured?.t0 || 0))
+                .y1(s => tempScale(s.measured?.trig || 0)));
 
         // "Bad" trigger area. Above trigger termprature and below temperature.
         svg
@@ -323,12 +338,11 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
             .attr('stroke-width', 0)
             .attr('opacity', 0.2)
             .attr('clip-path', `url(#${belowTemp})`)
-            .attr('d', d3.area()
-                .defined(s => s.virtual?.trig && s.virtual?.t0)
+            .attr('d', d3.area<Sample>()
+                .defined(s => Boolean(s.virtual?.trig) && Boolean(s.virtual?.t0))
                 .x((s, i) => tScale(i))
-                .y0(s => tempScale(s.virtual.trig))
-                .y1(s => tempScale(s.virtual.t0))
-            );
+                .y0(s => tempScale(s.virtual?.trig || 0))
+                .y1(s => tempScale(s.virtual?.t0 || 0)));
 
         // Virtual trigger temperature.
         svg
@@ -337,11 +351,10 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
             .attr('fill', 'none')
             .attr('stroke', 'blue')
             .attr('stroke-width', 0.5)
-            .attr('d', d3.line()
-                .defined(s => s.virtual?.trig)
+            .attr('d', d3.line<Sample>()
+                .defined(s => Boolean(s.virtual?.trig))
                 .x((s, i) => tScale(i))
-                .y(s => tempScale(s.virtual.trig))
-            );
+                .y(s => tempScale(s.virtual?.trig || 0)));
 
         // Measured trigger temperature.
         svg
@@ -351,11 +364,10 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
             .attr('stroke', 'blue')
             .attr('stroke-width', 0.5)
             .attr('stroke-dasharray', '4,4')
-            .attr('d', d3.line()
-                .defined(s => s.measured?.trig)
+            .attr('d', d3.line<Sample>()
+                .defined(s => Boolean(s.measured?.trig))
                 .x((s, i) => tScale(i))
-                .y(s => tempScale(s.measured.trig))
-            );
+                .y(s => tempScale(s.measured?.trig || 0)));
 
         // Draw a button for each hour.
         samples.forEach((s, i) => {
@@ -384,7 +396,7 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
     }, [svg, rect, samples, date, selectedTime, setSelectedTime]);
     return (
         <>
-            <svg ref={ref} className="Timeline">
+            <svg ref={ref as LegacyRef<SVGSVGElement>} className="Timeline">
             </svg>
             {
                 samples == null && (
@@ -392,7 +404,7 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
                 )
             }
             {
-                soundingShown && (
+                soundingShown && data && (
                     <Modal
                         show={soundingShown}
                         fullscreen={true}
@@ -405,7 +417,7 @@ export default function Timeline({ place, date, selectedTime, locations, setSele
                             </Modal.Title>
                         </Modal.Header>
                         <Modal.Body>
-                            <Sounding data={data[place].hours} time={selectedTime} setError={setError} />
+                            <Sounding data={data[place]} time={selectedTime} setError={setError} />
                         </Modal.Body>
                         <Modal.Footer>
                             <Button>{t('Close')}</Button>

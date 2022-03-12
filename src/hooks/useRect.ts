@@ -1,18 +1,12 @@
-import { useState, useEffect, useLayoutEffect, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, MutableRefObject } from 'react';
 
-function rateLimit(fn, ms) {
-    let timer
-    return () => {
-        clearTimeout(timer)
-        timer = setTimeout(_ => {
-            timer = null
-            fn.apply(this, arguments)
-        }, ms)
-    };
+interface rect {
+    height: number;
+    width: number;
 }
 
-export default function useRect(ref) {
-    const [rect, setRect] = useState(null);
+export default function useRect(ref: MutableRefObject<SVGSVGElement | undefined>) {
+    const [rect, setRect] = useState<rect | null>(null);
 
     const handleResize = useCallback(
         () => {
@@ -34,9 +28,8 @@ export default function useRect(ref) {
     // Run the handleResize on load, and then run it whenever the window is resized.
     // The resizeTimeout is used to prevent the handleResize from being called too often.
     useEffect(() => {
-        const handleResizeRatelimited = rateLimit(handleResize, 100);
-        window.addEventListener('resize', handleResizeRatelimited);
-        return () => window.removeEventListener('resize', handleResizeRatelimited);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
     }, [handleResize]);
 
     return { rect };

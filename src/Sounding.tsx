@@ -1,16 +1,26 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, LegacyRef } from 'react';
 import useD3 from './hooks/useD3';
 import * as d3 from 'd3';
 import { altMax, tempMax, windMax, xTick, yTick, y, colors } from './utils';
+import { Hour, Errorf } from './data';
+import { CalcHourData, HourlyData } from './calc'
 import "./App.css"
 import useRect from './hooks/useRect';
 
-export default function Sounding({ data, time, setError }) {
+interface Props {
+    data: {
+        [key: Hour]: CalcHourData;
+    };
+    time: Date;
+    setError: Errorf;
+}
+
+export default function Sounding({ data, time, setError }: Props) {
     const { ref, svg } = useD3();
     const { rect } = useRect(ref);
 
     useEffect(() => {
-        if (!data || !time || !rect) {
+        if (!data || !time || !rect || !svg) {
             return;
         }
 
@@ -24,8 +34,9 @@ export default function Sounding({ data, time, setError }) {
         const virtual = dateTimeData.virtual
         const measured = dateTimeData.measured;
 
-        if (!virtual && !measured) {
-            setError('No data', 'for chosen time');
+        const defaultData = virtual || measured;
+        if (!defaultData) {
+            setError({ name: 'No data', message: 'for chosen time' });
             return;
         }
 
@@ -64,9 +75,19 @@ export default function Sounding({ data, time, setError }) {
             .nice()
             .range(windPlotAreaX);
 
-        function initParams(p, defaults) {
+        interface Params {
+            [key: string]: any;
+            // color: string;
+            // width: number;
+            // duration: number;
+            // dashed: boolean;
+            // arrowSize: number;
+            // xScale: (x: number) => number;
+            // yScale: (y: number) => number;
+        }
+        function initParams(p: Params | null, defaults: Params) {
             if (!p) {
-                p = {}
+                p = {} as Params;
             }
             const keys = Object.keys(defaults)
             for (let i in keys) {
@@ -78,7 +99,9 @@ export default function Sounding({ data, time, setError }) {
             return p;
         }
 
-        function drawLine(x, y, params) {
+
+
+        function drawLine(svg: d3.Selection<any, any, any, any>, x: number[], y: number[], params: Params) {
             params = initParams(params, {
                 color: 'black',
                 width: 1,
@@ -88,18 +111,18 @@ export default function Sounding({ data, time, setError }) {
                 xScale: tempScale,
                 yScale: altScale,
             })
-            const points = []
+            const points = new Array<[number, number]>();
             for (let i in x) {
-                points.push(({ x: params.xScale(x[i]), y: params.yScale(y[i]) }));
+                points.push([params.xScale(x[i]), params.yScale(y[i])]);
             }
 
             const line = d3.line()
                 .curve(d3.curveLinear)
-                .x(d => d.x)
-                .y(d => d.y);
+                .x(d => d[0])
+                .y(d => d[1]);
 
-            function length(path) {
-                return d3.create('svg:path').attr('d', path).node().getTotalLength();
+            function length(path: any): number {
+                return (d3.create('svg:path').attr('d', path).node() as any).getTotalLength();
             }
 
             const l = length(line(points));
@@ -140,7 +163,7 @@ export default function Sounding({ data, time, setError }) {
             }
         }
 
-        function drawPoint(x, y, color) {
+        function drawPoint(svg: d3.Selection<any, any, any, any>, x: number, y: number, color: string) {
             const point = [{ x: tempScale(x), y: altScale(y) }]
             svg.append('g')
                 .attr('fill', 'white')
@@ -154,7 +177,7 @@ export default function Sounding({ data, time, setError }) {
                 .attr('r', 3);
         }
 
-        function drawText(x, y, text, params) {
+        function drawText(svg: d3.Selection<any, any, any, any>, x: number, y: number, text: string, params: Params) {
             params = initParams(params, {
                 xScale: tempScale,
                 size: 10,
@@ -184,10 +207,9 @@ export default function Sounding({ data, time, setError }) {
                         case 'bottom': t.attr('dy', '-0.7em'); break;
                         default: break;
                     }
-                })
-                .call(halo);
+                });
         }
-        function drawPolygon(points, color, width) {
+        function drawPolygon(svg: d3.Selection<any, any, any, any>, points: [number, number][], color: string, width: number) {
             const d = []
             for (let i in points) {
                 d.push([tempScale(points[i][0]), altScale(points[i][1])])
@@ -217,31 +239,39 @@ export default function Sounding({ data, time, setError }) {
         // Draw diagonal ticks.
         for (let x0 = tempRange[1]; x0 > tempRange[0]; x0 -= xTick) {
             drawLine(
+                svg,
                 [tempRange[0], x0],
                 [y(tempRange[0], x0, altRange[0]), altRange[0]],
                 { color: '#ebecf0' });
         }
         // Draw ground.
         drawPolygon(
+            svg,
             [
                 [tempRange[0], altRange[0]],
                 [tempRange[1], altRange[0]],
-                [tempRange[1], virtual.h0],
-                [tempRange[0], virtual.h0],
+                [tempRange[1], defaultData.h0],
+                [tempRange[0], defaultData.h0],
             ],
             colors.ground, 1.5)
-        drawText(tempRange[1], virtual.h0, `Ground: ${virtual.h0} ft`,
+        drawText(svg, tempRange[1], defaultData.h0, `Ground: ${defaultData.h0} ft`,
             { valign: 'top', halign: 'start' })
 
-        function drawSounding(name, data /* virtual | measured*/, tiColor, dashed) {
+        function drawSounding(
+            svg: d3.Selection<any, any, any, any>,
+            name: string,
+            data: HourlyData /* virtual or measured */,
+            tiColor: string,
+            dashed: boolean) {
             // Draw temperature graphs.
-            drawLine(data.temp, data.alt,
+            drawLine(svg, data.temp, data.alt,
                 { color: 'red', width: 2, dashed: dashed });
-            drawLine(data.dew, data.alt,
+            drawLine(svg, data.dew, data.alt,
                 { color: 'blue', width: 1, dashed: dashed });
 
             // Thermal indices.
             drawPolygon(
+                svg,
                 [
                     [tempRange[0], data.TI],
                     [tempRange[1], data.TI],
@@ -251,65 +281,67 @@ export default function Sounding({ data, time, setError }) {
                 tiColor, 0
             );
             if (data.TI !== data.h0) {
-                drawText(tempRange[1], data.TI, `TI ${name}: ` + data.TI.toFixed(0) + 'ft',
+                drawText(svg, tempRange[1], data.TI, `TI ${name}: ` + data.TI.toFixed(0) + 'ft',
                     { halign: 'start' })
             }
             if (data.TIM3 !== data.h0) {
-                drawText(tempRange[1], data.TIM3, `TI-3 ${name}: ` + data.TIM3.toFixed(0) + 'ft',
+                drawText(svg, tempRange[1], data.TIM3, `TI-3 ${name}: ` + data.TIM3.toFixed(0) + 'ft',
                     { halign: 'start' })
             }
 
             // Draw cloud base.
-            if (data.cloudBase) {
-                const vcloudBaseY = Math.min(data.cloudBase, altRange[1]);
-                if (data.cloudBase <= altRange[1]) {
+            if (data.CB) {
+                const vCBY = Math.min(data.CB, altRange[1]);
+                if (data.CB <= altRange[1]) {
                     drawLine(
-                        tempRange, [vcloudBaseY, vcloudBaseY],
-                        { color: colors.cloudBase, dashed: dashed })
+                        svg, tempRange, [vCBY, vCBY],
+                        { color: colors.CB, dashed: dashed })
                 }
-                drawText(tempRange[1], vcloudBaseY, `CB ${name}: ` + data.cloudBase.toFixed(0) + 'ft',
+                drawText(svg, tempRange[1], vCBY, `CB ${name}: ` + data.CB.toFixed(0) + 'ft',
                     { halign: 'start' })
             }
 
             // Draw wind
-            drawLine(data.windSpeed, data.alt,
+            drawLine(svg, data.windSpeed, data.alt,
                 { color: '#444444', xScale: windScale, dashed: dashed })
             for (let i in data.windSpeed) {
                 const dir = windDirName(data.windDir[i])
-                drawText(data.windSpeed[i], data.alt[i], data.windSpeed[i] + dir,
+                drawText(svg, data.windSpeed[i], data.alt[i], data.windSpeed[i] + dir,
                     { size: 10, xScale: windScale })
             }
         }
 
         if (virtual) {
-            drawSounding('(V)', virtual, colors.virtTI, false);
+            drawSounding(svg, '(V)', virtual, colors.virtTI, false);
         }
         if (measured) {
-            drawSounding('(M)', measured, colors.measuredTI, true);
+            drawSounding(svg, '(M)', measured, colors.measuredTI, true);
         }
 
         // Max temperature diagonals.
         drawPolygon(
+            svg,
             [
-                [virtual.t0, virtual.h0],
-                [virtual.t0 - 3, virtual.h0],
-                [tempRange[0], y(tempRange[0], virtual.t0 - 3, virtual.h0)],
-                [tempRange[0], y(tempRange[0], virtual.t0, virtual.h0)],
+                [defaultData.t0, defaultData.h0],
+                [defaultData.t0 - 3, defaultData.h0],
+                [tempRange[0], y(tempRange[0], defaultData.t0 - 3, defaultData.h0)],
+                [tempRange[0], y(tempRange[0], defaultData.t0, defaultData.h0)],
 
             ],
             colors.tempDiagonal, 0
         );
-        drawPoint(virtual.t0, virtual.h0, 'red');
-        drawText(virtual.t0, virtual.h0, 'T0: ' + virtual.t0 + 'ºC',
+        drawPoint(svg, defaultData.t0, defaultData.h0, 'red');
+        drawText(svg, defaultData.t0, defaultData.h0, 'T0: ' + defaultData.t0 + 'ºC',
             { valign: 'top' })
 
-        if (virtual.trig) {
-            const color = (virtual.isTriggered) ? colors.good : colors.bad;
-            drawLine([virtual.t0, virtual.trig], [virtual.h0, virtual.h0],
+        if (defaultData.trig) {
+            const color = (defaultData.isTriggered) ? colors.good : colors.bad;
+            drawLine(svg, [defaultData.t0, defaultData.trig], [defaultData.h0, defaultData.h0],
                 { color: color, duration: 2500, arrowSize: 14 })
-            drawText(virtual.trig, virtual.h0, 'Trigger: ' + virtual.trig.toFixed(1) + 'ºC',
+            drawText(svg, defaultData.trig, defaultData.h0, 'Trigger: ' + defaultData.trig.toFixed(1) + 'ºC',
                 { valign: 'top' })
         }
+
 
         // Draw axes.
         const altTicks = (altRange[1] - altRange[0]) / yTick;
@@ -331,8 +363,7 @@ export default function Sounding({ data, time, setError }) {
                 .attr('text-anchor', 'start')
                 .attr('font-weight', 'bold')
                 .attr('fill', 'black')
-                .text('H[ft]')
-                .call(halo))
+                .text('H[ft]'))
             .call(g => g
                 .selectAll('text')
                 .style('font-size', '8px')
@@ -354,8 +385,7 @@ export default function Sounding({ data, time, setError }) {
                 .attr('font-weight', 'bold')
                 .attr('text-anchor', 'end')
                 .attr('fill', 'black')
-                .text('T[c]')
-                .call(halo)));
+                .text('T[c]')));
 
         // Wind axis.
         svg.append('g').call(g => g
@@ -372,25 +402,18 @@ export default function Sounding({ data, time, setError }) {
                 .attr('font-weight', 'bold')
                 .attr('text-anchor', 'end')
                 .attr('fill', 'black')
-                .text('Wind [kn]')
-                .call(halo)));
+                .text('Wind [kn]')));
 
-        function halo(text) {
-            text.select(function () { return this.parentNode.insertBefore(this.cloneNode(true), this); })
-                .attr('fill', 'none')
-                .attr('stroke', 'white')
-                .attr('stroke-width', 4)
-                .attr('stroke-linejoin', 'round');
-        }
+
     }, [svg, rect, data, time, setError]);
 
     return (
-        <svg ref={ref} className='Sounding' >
+        <svg ref={ref as LegacyRef<SVGSVGElement>} className='Sounding' >
         </svg>
     );
 }
 
-function windDirName(v) {
+function windDirName(v: number): string {
     const dirs = [
         'N', 'NNW', 'NW', 'NWW',
         'W', 'SWW', 'SW', 'SSW',

@@ -9,21 +9,21 @@ export const windMax = 30; // Wind speed range.
 
 export const plotHours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
 
-export function pad(n) {
-    return n < 10 ? '0' + n : n;
+export function pad(n: number): string {
+    return n < 10 ? `0${n}` : `${n}`;
 }
 
 // Formats Date in yyyy-mm-dd.
-export function dateFormat(date) {
+export function dateFormat(date: Date): string {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 // Formats hours in hh.
-export function hourFormat(date) {
+export function hourFormat(date: Date): string {
     return `${pad(date.getHours())}`;
 }
 
-export function dateFormatPlotDay(t, date) {
+export function dateFormatPlotDay(t: any, date: Date): string {
     return `${t(weekdayName.get(date.getDay()))} ${pad(date.getDate())}/${pad(date.getMonth() + 1)}`;
 }
 
@@ -43,35 +43,35 @@ export const colors = {
     tempDiagonal: '#FD6B6B',
     bad: '#BF1818',
     good: '#21BF18',
-    cloudBase: '#2687DC',
+    CB: '#2687DC',
     ground: '#FDB84E',
     selected: '#DFFD4E',
 }
 
-export function dateTimeURLFormat(d) {
+export function dateTimeURLFormat(d: Date | null): string {
     if (!d) {
-        return null;
+        return '';
     }
     return `${dateFormat(d)}h${pad(d.getHours())}`;
 }
 
-export function dateTimeURLParse(s) {
+export function dateTimeURLParse(s: string): Date {
     const [dateStr, hourStr] = s.split('h');
     const [year, month, day] = dateStr.split('-').map(x => parseInt(x));
     return new Date(year, month - 1, day, parseInt(hourStr));
 }
 
 // Returns y value for a given x and a point [x0, y0] for slope M.
-export function y(x, x0, y0) {
+export function y(x: number, x0: number, y0: number): number {
     return (x - x0) * M + y0
 }
 
 // Returns x value for a given y and a point [x0, y0] for slope M.
-export function x(y, x0, y0) {
+export function x(y: number, x0: number, y0: number): number {
     return (y - y0) / M + x0
 }
 
-export function max(a, b) {
+export function max(a: number | undefined, b: number | undefined): number | undefined {
     if (a === undefined && b === undefined) {
         return 0;
     }
@@ -84,7 +84,7 @@ export function max(a, b) {
     return (a > b) ? a : b;
 }
 
-export function min(a, b) {
+export function min(a: number | undefined, b: number | undefined): number | undefined {
     if (a === undefined && b === undefined) {
         return 0;
     }
@@ -97,29 +97,18 @@ export function min(a, b) {
     return (a < b) ? a : b;
 }
 
-export function limitsText(min, max, units) {
-    if (min === 0) {
-        if (max === 0) {
-            return 'N/A';
-        } else {
-            return '<' + max + units
-        }
-    }
-    return min + '~' + max + units;
-}
-
 // Retruns x value for a given y between points p1=[x1, y1] and p2=[x2, y2].
-export function interpolate(p1, p2, y) {
+export function interpolate(p1: Array<number>, p2: Array<number>, y: number): number {
     const m = (p2[1] - p1[1]) / (p2[0] - p1[0])
     return p1[0] - (p1[1] - y) / m
 }
 
 
-export function intersect(x, y, x0, y0, m0) {
+export function intersect(x: Array<number>, y: Array<number>, x0: number, y0: number, m0: number): [number, number] | undefined {
 
     // Require at least 2 elements.
     if (x.length < 2) {
-        return null;
+        return undefined;
     }
 
     x0 = 1.0 * x0;
@@ -143,7 +132,7 @@ export function intersect(x, y, x0, y0, m0) {
 
     // No intersection.
     if (i < 1 || i >= diff.length) {
-        return null;
+        return undefined;
     }
 
     // Find where a line between p1 and p2 crosses the y=0 line.

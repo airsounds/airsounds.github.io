@@ -7,6 +7,7 @@ import Help from './Help';
 import { fetchIndex } from './fetcher';
 import { dateFormat, dateTimeURLFormat, dateTimeURLParse, dateFormatPlotDay } from './utils';
 import { useTranslation } from 'react-i18next';
+import { IndexData } from './data';
 
 
 const defaultLang = 'he';
@@ -26,18 +27,18 @@ export default function App() {
   // Forecast time.
   const [time, setTime] = useState(initialTime(q.get('time')));
   // Number of days to show.
-  const [days] = useState(parseInt(q.get('days')) || defaultForecastDays);
+  const [days] = useState(parseInt(q.get('days') || '0') || defaultForecastDays);
   // UI language.
   const [lang] = useState(q.get('lang') || defaultLang);
 
   // Dates to plot timeline for.
-  const [dates, setDates] = useState([]);
+  const [dates, setDates] = useState<Array<Date>>([]);
 
   // Loaded index.
-  const [index, setIndex] = useState(null);
+  const [index, setIndex] = useState<IndexData | null>(null);
 
   // Current error.
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<Error | null>(null);
 
   // Show help layer.
   const [helpShown, setHelpShown] = useState(false);
@@ -88,7 +89,7 @@ export default function App() {
     }
     firstDay.setHours(12, 0, 0, 0);
 
-    setDates([...Array(days).keys()]
+    setDates(Array.from(Array(days).keys())
       .map(i => {
         const date = new Date(firstDay.getTime());
         date.setDate(date.getDate() + i);
@@ -148,7 +149,7 @@ export default function App() {
             index && dates && (
               dates.map(date => (
                 <Row
-                  key={date}
+                  key={dateFormat(date)}
                   className='justify-content-center' >
                   <Col
                     style={{
@@ -196,11 +197,11 @@ export default function App() {
   );
 }
 
-function initialTime(queryTime) {
+function initialTime(queryTime: string | null): Date {
   return queryTime ? dateTimeURLParse(queryTime) : noonToday();
 }
 
-function noonToday() {
+function noonToday(): Date {
   const d = new Date();
   d.setHours(12, 0, 0, 0);
   return d;

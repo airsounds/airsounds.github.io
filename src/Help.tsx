@@ -20,7 +20,7 @@ export default function Help() {
                 <p className='card-text rtl'>
                     בחלק התחתון מופיעים ארבעה גרפים עבור ארבעה ימי תחזית.
                 </p>
-                <Image src="/timeline-legend.png" width="100%" style={{ 'max-width': '500px' }} />
+                <Image src="/timeline-legend.png" width="100%" style={{ maxWidth: '500px' }} />
                 <p className='card-text rtl'>
                     הגרף האדום מתאר את מפל הטמפרטורה היבש.
                     הגרף הכחול מתאר את מפל האוויר הרווי.
@@ -34,7 +34,7 @@ export default function Help() {
                 <p className='card-text rtl'>
                     בלחיצה על אזור בגרף, תוצר טכיגרמה מפורטת עבור אותה שעה באותו יום.
                 </p>
-                <Image src="/sounding-legend.png" width="100%" style={{ 'max-width': '600px' }} />
+                <Image src="/sounding-legend.png" width="100%" style={{ maxWidth: '600px' }} />
                 <h5>מושגים</h5>
                 <ListGroup dir='ltr'>
                     <ListGroup.Item><b>T<small><b>0</b></small></b>: Grond level temperature.</ListGroup.Item>
