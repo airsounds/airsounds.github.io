@@ -53,9 +53,8 @@ export default async function calc(locations: LocationData[], raw: DailyData): P
             if (!data[place]) {
                 data[place] = {};
             }
-            if (measuredData.has(placeInfo.uwyo_station)) {
-                sources.uwyo = measuredData.get(placeInfo.uwyo_station);
-            }
+            sources.uwyo = measuredData.get(`${placeInfo.uwyo_station}`);
+
             // Calc hourly data.
             data[place][hour] = calcHourData(placeInfo, hour, sources)
         });
