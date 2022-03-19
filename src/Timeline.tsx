@@ -6,16 +6,15 @@ import * as d3 from 'd3';
 import { altMax, tempMax, dateTimeURLFormat, dateFormat, hourFormat, colors } from './utils';
 import { Modal, Image, Button } from 'react-bootstrap';
 import Sounding from './Sounding';
-import { fetchDay } from './fetcher';
-import calc, { CalcData, CalcHourData } from './calc';
+import { CalcData, CalcHourData } from './calc';
 import { useTranslation } from 'react-i18next';
-import { DailyData, LocationData, Errorf } from './data';
+import { Errorf } from './data';
 
-export type Props = {
+type Props = {
+    data: CalcData;
     place: string;
     date: Date;
     selectedTime: Date;
-    locations: LocationData[];
     setSelectedTime: (time: Date) => void;
     setError: Errorf;
 }
@@ -29,50 +28,24 @@ export default function Timeline(props: Props) {
     const { ref, svg } = useD3();
     const { rect } = useRect(ref);
 
-    const [rawData, setRawData] = useState<DailyData | null>(null);
-    const [data, setData] = useState<CalcData | null>(null);
     const [samples, setSamples] = useState<Sample[] | null>(null);
     const [soundingShown, setSoundingShown] = useState(false);
 
-    // Fetch data and calculate.
-    // The data is fetched for all places, so it is only depenedent on the time.
     useEffect(() => {
-        async function fetchRawData(date: Date) {
-            const rawData = await fetchDay(date, props.setError)
-            console.debug(`raw ${dateFormat(date)}:`, rawData);
-            setRawData(rawData);
-        }
-        if (!props.date) {
-            return;
-        }
-        fetchRawData(props.date);
-    }, [props, rawData]);
-
-    useEffect(() => {
-        async function calcData(date: Date, locations: LocationData[], rawData: DailyData) {
-            const data = await calc(locations, rawData);
-            console.debug(`calculated ${dateFormat(date)}:`, data);
-            setData(data);
-
-            const samples = Object.entries(data[props.place])
-                .map(([hour, hourData]) => {
-                    const t = new Date(date.getTime());
-                    t.setHours(parseInt(hour));
-                    return {
-                        t: t,
-                        virtual: hourData.virtual,
-                        measured: hourData.measured,
-                    }
-                })
-                .sort((a, b) => a.t.getTime() - b.t.getTime());
-            console.debug(`samples ${dateFormat(date)}:`, samples);
-            setSamples(samples);
-        }
-        if (!props.date || !props.locations || !rawData) {
-            return;
-        }
-        calcData(props.date, props.locations, rawData);
-    }, [props, rawData]);
+        const samples = Object.entries(props.data[props.place])
+            .map(([hour, hourData]) => {
+                const t = new Date(props.date.getTime());
+                t.setHours(parseInt(hour));
+                return {
+                    t: t,
+                    virtual: hourData.virtual,
+                    measured: hourData.measured,
+                }
+            })
+            .sort((a, b) => a.t.getTime() - b.t.getTime());
+        console.debug(`samples ${dateFormat(props.date)}:`, samples);
+        setSamples(samples);
+    }, [props]);
 
     useEffect(() => {
         if (!rect || !samples || !svg || !props.date) {
@@ -404,7 +377,7 @@ export default function Timeline(props: Props) {
                 )
             }
             {
-                soundingShown && data && (
+                soundingShown && props.data && (
                     <Modal
                         show={soundingShown}
                         fullscreen={true}
@@ -418,7 +391,7 @@ export default function Timeline(props: Props) {
                         </Modal.Header>
                         <Modal.Body>
                             <Sounding
-                                data={data[props.place]}
+                                data={props.data[props.place]}
                                 time={props.selectedTime}
                                 setError={props.setError}
                             />
