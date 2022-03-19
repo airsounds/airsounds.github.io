@@ -1,11 +1,11 @@
 import './App.css';
 import { useEffect, useState } from 'react';
-import { Navbar, Container, NavDropdown, Nav, Image, Modal, Card, Row, Col } from 'react-bootstrap';
+import { Navbar, Container, NavDropdown, Nav, Image, Modal } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Timeline from './Timeline';
+import TimelineBox from './TimelineBox';
 import Help from './Help';
 import { fetchIndex } from './fetcher';
-import { dateFormat, dateTimeURLFormat, dateTimeURLParse, dateFormatPlotDay } from './utils';
+import { dateFormat, dateTimeURLFormat, dateTimeURLParse } from './utils';
 import { useTranslation } from 'react-i18next';
 import { IndexData } from './data';
 
@@ -13,8 +13,6 @@ import { IndexData } from './data';
 const defaultLang = 'he';
 const defaultPlace = 'megido';
 const defaultForecastDays = 4;
-const timelineHeight = '300px';
-const timelineMaxWidth = '600px'
 
 export default function App() {
   const navigate = useNavigate();
@@ -148,41 +146,20 @@ export default function App() {
           {
             index && dates && (
               dates.map(date => (
-                <Row
+                <TimelineBox
                   key={dateFormat(date)}
-                  className='justify-content-center' >
-                  <Col
-                    style={{
-                      width: '100%',
-                      maxWidth: timelineMaxWidth,
-                      marginTop: '16px',
-                    }}>
-                    <Card className='text-center'>
-                      <Card.Header>
-                        {dateFormatPlotDay(t, date)}
-                      </Card.Header>
-                      <Card.Body style={{
-                        height: timelineHeight,
-                        paddingLeft: '0px',
-                        paddingRight: '0px',
-                      }}>
-                        <Timeline
-                          place={place}
-                          date={date}
-                          selectedTime={time}
-                          locations={index.Locations}
-                          setSelectedTime={setTime}
-                          setError={setError}
-                        />
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                </Row>
+                  place={place}
+                  date={date}
+                  selectedTime={time}
+                  locations={index.Locations}
+                  setSelectedTime={setTime}
+                  setError={setError}
+                />
               ))
             )
           }
         </>
-      </Container>
+      </Container >
       {
         helpShown && (
           <Modal
