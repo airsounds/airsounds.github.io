@@ -6,6 +6,10 @@ export const resources = {
             'Today': 'עבור להיום',
             'Help': 'עזרה',
             'Close': 'סגור',
+            'Measured at': 'נמדד ב',
+            'noon': 'צהרי היום',
+            'midnight': 'חצות',
+            'No measured data': 'אין נתוני בלון',
 
             // Place names.
             'megido': 'מגידו',

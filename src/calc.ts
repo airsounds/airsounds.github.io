@@ -1,5 +1,5 @@
 import { intersect, x, M, altTrigger, plotHours } from './utils';
-import { DailyData, LocationData, SoundingData, ForecastData, Location, Hour, Sources } from './data';
+import { DailyData, LocationData, SoundingData, ForecastData, Location, Hour } from './data';
 
 export interface CalcData {
     [key: Location]: {
@@ -8,8 +8,10 @@ export interface CalcData {
 };
 
 export interface CalcHourData {
+    t: Date;
     virtual?: HourlyData;
     measured?: HourlyData;
+    isMeasureHour: boolean;
 };
 
 export interface HourlyData {
@@ -30,13 +32,15 @@ export interface HourlyData {
 }
 
 // Returns map of place to date to date data, which includes hours which is hour to hour data.
-export default async function calc(locations: LocationData[], raw: DailyData): Promise<CalcData> {
+export default async function calc(date: Date, locations: LocationData[], raw: DailyData): Promise<CalcData> {
     // Construct the measured data as map[place]measured.
     const measuredData = new Map<Location, SoundingData>();
-    Object.values(raw).forEach(places =>
+    var measureHour: Hour | null;
+    Object.entries(raw).forEach(([hour, places]) =>
         Object.entries(places).forEach(([place, sources]) => {
             if (sources.uwyo) {
                 measuredData.set(place, sources.uwyo);
+                measureHour = hour;
             }
         }));
 
@@ -55,21 +59,17 @@ export default async function calc(locations: LocationData[], raw: DailyData): P
             }
             sources.uwyo = measuredData.get(`${placeInfo.uwyo_station}`);
 
-            // Calc hourly data.
-            data[place][hour] = calcHourData(placeInfo, hour, sources)
+            const t = new Date(date);
+            t.setHours(parseInt(hour));
+            data[place][hour] = {
+                t: t,
+                virtual: sources.ims && sources.noaa ? calcHourSounding(placeInfo, hour, sources.ims, sources.noaa) : undefined,
+                measured: sources.ims && sources.uwyo ? calcHourSounding(placeInfo, hour, sources.ims, sources.uwyo) : undefined,
+                isMeasureHour: measureHour === hour,
+            }
         });
     });
     return data;
-}
-
-function calcHourData(placeInfo: LocationData, hour: Hour, sources: Sources): CalcHourData {
-    if (!sources.ims) {
-        return {};
-    }
-    return {
-        virtual: sources.noaa ? calcHourSounding(placeInfo, hour, sources.ims, sources.noaa) : undefined,
-        measured: sources.uwyo ? calcHourSounding(placeInfo, hour, sources.ims, sources.uwyo) : undefined,
-    }
 }
 
 function calcHourSounding(placeInfo: LocationData, hour: Hour, forecast: ForecastData, soundingData: SoundingData): HourlyData {

@@ -19,29 +19,16 @@ type Props = {
     setError: Errorf;
 }
 
-interface Sample extends CalcHourData {
-    t: Date;
-}
-
 export default function Timeline(props: Props) {
     const { t } = useTranslation();
     const { ref, svg } = useD3();
     const { rect } = useRect(ref);
 
-    const [samples, setSamples] = useState<Sample[] | null>(null);
+    const [samples, setSamples] = useState<CalcHourData[] | null>(null);
     const [soundingShown, setSoundingShown] = useState(false);
 
     useEffect(() => {
-        const samples = Object.entries(props.data[props.place])
-            .map(([hour, hourData]) => {
-                const t = new Date(props.date.getTime());
-                t.setHours(parseInt(hour));
-                return {
-                    t: t,
-                    virtual: hourData.virtual,
-                    measured: hourData.measured,
-                }
-            })
+        const samples = Object.values(props.data[props.place])
             .sort((a, b) => a.t.getTime() - b.t.getTime());
         console.debug(`samples ${dateFormat(props.date)}:`, samples);
         setSamples(samples);
@@ -80,8 +67,8 @@ export default function Timeline(props: Props) {
         const altTicks = 1000; // Each tick is 1k feet.
         const tempTicks = 5; // Each tick is 5 degrees.
 
-        function findMaxAlt(samples: Sample[]) {
-            function allSampleAltValues(s: Sample): Array<number | undefined> {
+        function findMaxAlt(samples: CalcHourData[]) {
+            function allSampleAltValues(s: CalcHourData): Array<number | undefined> {
                 return [
                     s.virtual?.TI,
                     s.virtual?.TIM3,
@@ -105,8 +92,8 @@ export default function Timeline(props: Props) {
             .domain(altRange)
             .range(yAlt);
 
-        function findExtremeTemp(samples: Sample[]): [number, number] {
-            function allSampleTempValues(s: Sample): Array<number | undefined> {
+        function findExtremeTemp(samples: CalcHourData[]): [number, number] {
+            function allSampleTempValues(s: CalcHourData): Array<number | undefined> {
                 return [
                     s.virtual?.t0,
                     s.virtual?.trig,
@@ -186,7 +173,7 @@ export default function Timeline(props: Props) {
             .attr('fill', colors.ground)
             .attr('stroke-width', 0)
             .attr('opacity', 0.5)
-            .attr('d', d3.area<Sample>()
+            .attr('d', d3.area<CalcHourData>()
                 .defined(s => Boolean(s.virtual?.h0))
                 .x((s, i) => tScale(i))
                 .y0(s => altScale((s.virtual?.h0 || 0) > 0 ? 0 : (s.virtual?.h0 || 0) - 10))
@@ -198,7 +185,7 @@ export default function Timeline(props: Props) {
             .attr('fill', colors.virtTI)
             .attr('stroke-width', 0)
             .attr('opacity', 0.3)
-            .attr('d', d3.area<Sample>()
+            .attr('d', d3.area<CalcHourData>()
                 .defined(s => Boolean(s.virtual?.TI) && Boolean(s.virtual?.TIM3))
                 .x((s, i) => tScale(i))
                 .y0(s => altScale(s.virtual?.TIM3 || 0))
@@ -210,7 +197,7 @@ export default function Timeline(props: Props) {
             .attr('fill', colors.measuredTI)
             .attr('stroke-width', 0)
             .attr('opacity', 0.3)
-            .attr('d', d3.area<Sample>()
+            .attr('d', d3.area<CalcHourData>()
                 .defined(s => Boolean(s.measured?.TI) && Boolean(s.measured?.TIM3))
                 .x((s, i) => tScale(i))
                 .y0(s => altScale(s.measured?.TIM3 || 0))
@@ -222,7 +209,7 @@ export default function Timeline(props: Props) {
             .attr('fill', 'none')
             .attr('stroke', colors.CB)
             .attr('stroke-width', 0.5)
-            .attr('d', d3.line<Sample>()
+            .attr('d', d3.line<CalcHourData>()
                 .defined(s => Boolean(s.virtual?.CB))
                 .x((s, i) => tScale(i))
                 .y(s => altScale(s.virtual?.CB || 0)));
@@ -234,7 +221,7 @@ export default function Timeline(props: Props) {
             .attr('stroke', colors.CB)
             .attr('stroke-width', 0.5)
             .attr('stroke-dasharray', '4,4')
-            .attr('d', d3.line<Sample>()
+            .attr('d', d3.line<CalcHourData>()
                 .defined(s => Boolean(s.measured?.CB))
                 .x((s, i) => tScale(i))
                 .y(s => altScale(s.measured?.CB || 0)));
@@ -245,7 +232,7 @@ export default function Timeline(props: Props) {
             .attr('fill', 'none')
             .attr('stroke', 'red')
             .attr('stroke-width', 0.5)
-            .attr('d', d3.line<Sample>()
+            .attr('d', d3.line<CalcHourData>()
                 .defined(s => Boolean(s.virtual?.t0))
                 .x((s, i) => tScale(i))
                 .y(s => tempScale(s.virtual?.t0 || 0)));
@@ -257,7 +244,7 @@ export default function Timeline(props: Props) {
             .datum(samples)
             .attr('id', belowTemp)
             .append('path')
-            .attr('d', d3.area<Sample>()
+            .attr('d', d3.area<CalcHourData>()
                 .defined(s => Boolean(s.virtual?.t0))
                 .x((s, i) => tScale(i))
                 .y0(0)
@@ -267,7 +254,7 @@ export default function Timeline(props: Props) {
             .datum(samples)
             .attr('id', aboveTemp)
             .append('path')
-            .attr('d', d3.area<Sample>()
+            .attr('d', d3.area<CalcHourData>()
                 .defined(s => Boolean(s.virtual?.t0))
                 .x((s, i) => tScale(i))
                 .y0(rect.height)
@@ -282,7 +269,7 @@ export default function Timeline(props: Props) {
             .attr('stroke-width', 0)
             .attr('opacity', 0.2)
             .attr('clip-path', `url(#${aboveTemp})`)
-            .attr('d', d3.area<Sample>()
+            .attr('d', d3.area<CalcHourData>()
                 .defined(s => Boolean(s.virtual?.trig) && Boolean(s.virtual?.t0))
                 .x((s, i) => tScale(i))
                 .y0(s => tempScale(s.virtual?.t0 || 0))
@@ -297,7 +284,7 @@ export default function Timeline(props: Props) {
             .attr('stroke-width', 0)
             .attr('opacity', 0.2)
             .attr('clip-path', `url(#${aboveTemp})`)
-            .attr('d', d3.area<Sample>()
+            .attr('d', d3.area<CalcHourData>()
                 .defined(s => Boolean(s.measured?.trig) && Boolean(s.measured?.t0))
                 .x((s, i) => tScale(i))
                 .y0(s => tempScale(s.measured?.t0 || 0))
@@ -311,7 +298,7 @@ export default function Timeline(props: Props) {
             .attr('stroke-width', 0)
             .attr('opacity', 0.2)
             .attr('clip-path', `url(#${belowTemp})`)
-            .attr('d', d3.area<Sample>()
+            .attr('d', d3.area<CalcHourData>()
                 .defined(s => Boolean(s.virtual?.trig) && Boolean(s.virtual?.t0))
                 .x((s, i) => tScale(i))
                 .y0(s => tempScale(s.virtual?.trig || 0))
@@ -324,7 +311,7 @@ export default function Timeline(props: Props) {
             .attr('fill', 'none')
             .attr('stroke', 'blue')
             .attr('stroke-width', 0.5)
-            .attr('d', d3.line<Sample>()
+            .attr('d', d3.line<CalcHourData>()
                 .defined(s => Boolean(s.virtual?.trig))
                 .x((s, i) => tScale(i))
                 .y(s => tempScale(s.virtual?.trig || 0)));
@@ -337,7 +324,7 @@ export default function Timeline(props: Props) {
             .attr('stroke', 'blue')
             .attr('stroke-width', 0.5)
             .attr('stroke-dasharray', '4,4')
-            .attr('d', d3.line<Sample>()
+            .attr('d', d3.line<CalcHourData>()
                 .defined(s => Boolean(s.measured?.trig))
                 .x((s, i) => tScale(i))
                 .y(s => tempScale(s.measured?.trig || 0)));
