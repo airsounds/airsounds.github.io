@@ -15,11 +15,12 @@ export default function DayInfo(props: Props) {
     const [measureHour, setMeasureHour] = useState<string | undefined>(undefined);
 
     useEffect(() => {
-        const measureHours = Object.entries(props)
-            .map(([h, v]) => v.isMeasureHour ? parseInt(h) : undefined)
-            .filter(h => h);
+        const measureHours = Object.values(props)
+            .map(v => v.measured?.measureHour !== undefined ? parseInt(v.measured?.measureHour) : undefined)
+            .filter(h => h !== undefined);
         if (measureHours.length > 0) {
             const measureHour = pad(Math.max(...(measureHours as number[])));
+            console.log(measureHour)
             if (measureHour === '12') {
                 setMeasureHour('noon');
             } else if (measureHour === '00') {
@@ -31,7 +32,7 @@ export default function DayInfo(props: Props) {
     }, [props])
 
     return <>
-        {measureHour && <Card.Subtitle className="mb-2 text-muted">{t('Measured at')}{t(measureHour)}</Card.Subtitle>}
-        {!measureHour && <Card.Subtitle className="mb-2 text-muted">{t('No measured data')}</Card.Subtitle>}
+        {measureHour !== undefined && <Card.Subtitle className="mb-2 text-muted">{t('Measured at')}{t(measureHour)}</Card.Subtitle>}
+        {measureHour === undefined && <Card.Subtitle className="mb-2 text-muted">{t('No measured data')}</Card.Subtitle>}
     </>
 }

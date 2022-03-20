@@ -1,5 +1,8 @@
-import { intersect, x, M, altTrigger, plotHours } from './utils';
+import { intersect, x, M, altTrigger } from './utils';
 import { DailyData, LocationData, SoundingData, ForecastData, Location, Hour } from './data';
+import { measureMemory } from 'vm';
+
+const plotHours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
 
 export interface CalcData {
     [key: Location]: {
@@ -11,7 +14,6 @@ export interface CalcHourData {
     t: Date;
     virtual?: HourlyData;
     measured?: HourlyData;
-    isMeasureHour: boolean;
 };
 
 export interface HourlyData {
@@ -29,13 +31,16 @@ export interface HourlyData {
     CB: number;
     trig?: number;
     isTriggered: boolean;
+
+    type: 'measured' | 'virtual';
+    measureHour?: Hour;
 }
 
 // Returns map of place to date to date data, which includes hours which is hour to hour data.
 export default async function calc(date: Date, locations: LocationData[], raw: DailyData): Promise<CalcData> {
     // Construct the measured data as map[place]measured.
     const measuredData = new Map<Location, SoundingData>();
-    var measureHour: Hour | null;
+    var measureHour: Hour | undefined;
     Object.entries(raw).forEach(([hour, places]) =>
         Object.entries(places).forEach(([place, sources]) => {
             if (sources.uwyo) {
@@ -63,16 +68,22 @@ export default async function calc(date: Date, locations: LocationData[], raw: D
             t.setHours(parseInt(hour));
             data[place][hour] = {
                 t: t,
-                virtual: sources.ims && sources.noaa ? calcHourSounding(placeInfo, hour, sources.ims, sources.noaa) : undefined,
-                measured: sources.ims && sources.uwyo ? calcHourSounding(placeInfo, hour, sources.ims, sources.uwyo) : undefined,
-                isMeasureHour: measureHour === hour,
+                virtual: sources.ims && sources.noaa ? calcHourSounding('virtual', placeInfo, hour, sources.ims, sources.noaa, measureHour) : undefined,
+                measured: sources.ims && sources.uwyo ? calcHourSounding('measured', placeInfo, hour, sources.ims, sources.uwyo, measureHour) : undefined,
             }
         });
     });
     return data;
 }
 
-function calcHourSounding(placeInfo: LocationData, hour: Hour, forecast: ForecastData, soundingData: SoundingData): HourlyData {
+function calcHourSounding(
+    type: 'measured' | 'virtual',
+    placeInfo: LocationData,
+    hour: Hour,
+    forecast: ForecastData,
+    soundingData: SoundingData,
+    measureHour: Hour | undefined,
+): HourlyData {
     const data: HourlyData = {
         hour: hour,
         alt: soundingData.Height,
@@ -87,6 +98,9 @@ function calcHourSounding(placeInfo: LocationData, hour: Hour, forecast: Forecas
         TIM3: placeInfo.alt,
         CB: placeInfo.alt,
         isTriggered: false,
+
+        type: type,
+        measureHour: measureHour,
     }
 
     // Thermal index calculations.

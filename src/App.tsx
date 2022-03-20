@@ -13,6 +13,7 @@ import { IndexData } from './data';
 const defaultLang = 'he';
 const defaultPlace = 'megido';
 const defaultForecastDays = 4;
+const headerImgSize = '24px'
 
 export default function App() {
   const navigate = useNavigate();
@@ -100,7 +101,13 @@ export default function App() {
       <Navbar expand='lg' bg='light'>
         <Container>
           <Navbar.Brand href='/'>
-            <Image src='/logo.png' width='24' height='24' className='d-inline-block' alt='logo' />
+            <Image
+              src='/logo.png'
+              width={headerImgSize}
+              height={headerImgSize}
+              className='d-inline-block'
+              alt='logo'
+            />
             {' '}{t('Airsounds')}
           </Navbar.Brand>
           {
@@ -128,6 +135,18 @@ export default function App() {
             href='#'
             onClick={() => setHelpShown(true)}>
             {t('Help')}
+          </Nav.Link>
+          <Nav.Link
+            href='https://github.com/airsounds/airsounds.github.io'
+            target='_blank'
+          >
+            <Image
+              src='/github.png'
+              width={headerImgSize}
+              height={headerImgSize}
+              className='d-inline-block'
+              alt='Github'
+            />
           </Nav.Link>
         </Container>
       </Navbar>
