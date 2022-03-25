@@ -19,6 +19,15 @@ type Props = {
     setError: Errorf;
 }
 
+const windColorScale = [
+    '#69B34C',
+    '#ACB334',
+    '#FAB733',
+    '#FF8E15',
+    '#FF4E11',
+    '#FF0D0D',
+]
+
 export default function Timeline(props: Props) {
     const { t } = useTranslation();
     const { ref, svg } = useD3();
@@ -60,12 +69,13 @@ export default function Timeline(props: Props) {
                 plotArea.x[1] - hourWidth / 2,
             ]);
 
-        const yAltPortion = 0.7;
-        const yAlt = [plotArea.y[0] * yAltPortion + plotArea.y[1] * (1 - yAltPortion), plotArea.y[1]];
-        const yTemp = [plotArea.y[0], yAlt[0]];
-
-        const altTicks = 1000; // Each tick is 1k feet.
-        const tempTicks = 5; // Each tick is 5 degrees.
+        // Capture graph height.
+        // 0 is the top of the screen, 1 is the bottom of the screen.
+        // The first element is the bottom of the axis, the second is the top of the axis.
+        const interpolateY = (c: number) => plotArea.y[0] * c + plotArea.y[1] * (1 - c);
+        const altY = [0.5, 0].map(interpolateY);
+        const tempY = [0.8, 0.5].map(interpolateY);
+        const windY = [1, 0.8].map(interpolateY);
 
         function findMaxAlt(samples: CalcHourData[]) {
             function allSampleAltValues(s: CalcHourData): Array<number | undefined> {
@@ -78,19 +88,20 @@ export default function Timeline(props: Props) {
                     s.measured?.CB,
                 ]
             }
-            const maxAlt = Math.max(...samples.flatMap(s => allSampleAltValues(s).filter(v => v) as number[]));
-            const maxAltRounded = Math.ceil(maxAlt / altTicks) * altTicks;
-            return maxAltRounded
+            return Math.max(...samples.flatMap(s => allSampleAltValues(s).filter(v => v) as number[]));
         }
         const altRange = [
             0,
             Math.min(findMaxAlt(samples), altMax),
         ];
+        const altTicks = 1000; // Each tick is 1k feet.
+        altRange[1] = Math.ceil(altRange[1] / altTicks) * altTicks;
+
 
         const altScale = d3
             .scaleLinear()
             .domain(altRange)
-            .range(yAlt);
+            .range(altY);
 
         function findExtremeTemp(samples: CalcHourData[]): [number, number] {
             function allSampleTempValues(s: CalcHourData): Array<number | undefined> {
@@ -102,22 +113,38 @@ export default function Timeline(props: Props) {
                 ]
             }
             const allValues = samples.flatMap(s => allSampleTempValues(s)).filter(v => v) as number[];
-            const min = Math.floor(Math.min(...allValues) / tempTicks) * tempTicks;
-            const max = Math.ceil(Math.max(...allValues) / tempTicks) * tempTicks;
-            return [min, max];
+            return [Math.min(...allValues), Math.max(...allValues)];
         }
         const samplesExtremeTemps = findExtremeTemp(samples);
         const tempRange = [
             Math.max(samplesExtremeTemps[0], 0),
             Math.min(samplesExtremeTemps[1], tempMax),
         ]
+        const tempTicks = 5; // Each tick is 5 degrees.
+        tempRange[0] = Math.floor(tempRange[0] / tempTicks) * tempTicks;
+        tempRange[1] = Math.ceil(tempRange[1] / tempTicks) * tempTicks;
 
         const tempScale = d3
             .scaleLinear()
             .domain(tempRange)
-            .range(yTemp);
+            .range(tempY);
 
+        const windRange = [0, 20];
+        const windTicks = 5; // Each tick is 5 knots.
 
+        const windScale = d3
+            .scaleLinear()
+            .domain(windRange)
+            .range(windY);
+
+        const plotAreaWidth = plotArea.x[1] - plotArea.x[0] - hourWidth
+        const xTicksOpacity = 0.2;
+        const yTicksTextShift = -8;
+        const altTicksN = Math.floor((altRange[1] - altRange[0]) / altTicks);
+        const tempTicksN = Math.floor((tempRange[1] - tempRange[0]) / tempTicks);
+        const windTicksN = Math.floor((windRange[1] - windRange[0]) / windTicks);
+
+        // Hours X axis.
         svg.append('g').call(g => g
             .attr('transform', `translate(0,${plotArea.y[1]})`)
             .call(d3
@@ -131,12 +158,7 @@ export default function Timeline(props: Props) {
                 .style('font-size', '8px')
                 .attr('text-anchor', 'middle')));
 
-        const plotAreaWidth = plotArea.x[1] - plotArea.x[0] - hourWidth
-        const xTicksOpacity = 0.2;
-        const yTicksTextShift = -8;
-        const altTicksN = Math.floor((altRange[1] - altRange[0]) / altTicks);
-        const tempTicksN = Math.floor((tempRange[1] - tempRange[0]) / tempTicks);
-
+        // Alt Y axis.
         svg.append('g').call(g => g
             .attr('transform', `translate(${plotArea.x[0]},0)`)
             .call(d3
@@ -153,6 +175,7 @@ export default function Timeline(props: Props) {
                 .attr('text-anchor', 'start')
                 .attr('x', yTicksTextShift)));
 
+        // Temp Y axis.
         svg.append('g').call(g => g
             .attr('transform', `translate(${plotArea.x[0]},0)`)
             .call(d3
@@ -169,7 +192,27 @@ export default function Timeline(props: Props) {
                 .attr('text-anchor', 'start')
                 .attr('x', yTicksTextShift)));
 
-        svg.append('path').datum(samples)
+        // Wind Y axis.
+        svg.append('g').call(g => g
+            .attr('transform', `translate(${plotArea.x[0]},0)`)
+            .call(d3
+                .axisLeft(windScale)
+                .ticks(windTicksN)
+                .tickFormat((d, i) => `${d}kt`))
+            .call(g => g.select('.domain').remove())
+            .call(g => g.selectAll('.tick line')
+                .attr('stroke-opacity', xTicksOpacity)
+                .attr('x2', plotAreaWidth))
+            .call(g => g
+                .selectAll('text')
+                .style('font-size', '8px')
+                .attr('text-anchor', 'start')
+                .attr('x', yTicksTextShift)));
+
+        // Ground.
+        svg
+            .append('path')
+            .datum(samples)
             .attr('fill', colors.ground)
             .attr('stroke-width', 0)
             .attr('opacity', 0.5)
@@ -179,6 +222,7 @@ export default function Timeline(props: Props) {
                 .y0(s => altScale((s.virtual?.h0 || 0) > 0 ? 0 : (s.virtual?.h0 || 0) - 10))
                 .y1(s => altScale((s.virtual?.h0 || 0))));
 
+        // Virtual TI.
         svg
             .append('path')
             .datum(samples)
@@ -191,6 +235,7 @@ export default function Timeline(props: Props) {
                 .y0(s => altScale(s.virtual?.TIM3 || 0))
                 .y1(s => altScale(s.virtual?.TI || 0)));
 
+        // Measured TI.
         svg
             .append('path')
             .datum(samples)
@@ -203,6 +248,7 @@ export default function Timeline(props: Props) {
                 .y0(s => altScale(s.measured?.TIM3 || 0))
                 .y1(s => altScale(s.measured?.TI || 0)));
 
+        // Virtual cloud base.
         svg
             .append('path')
             .datum(samples)
@@ -214,6 +260,7 @@ export default function Timeline(props: Props) {
                 .x((s, i) => tScale(i))
                 .y(s => altScale(s.virtual?.CB || 0)));
 
+        // Measured cloud base.
         svg
             .append('path')
             .datum(samples)
@@ -328,6 +375,79 @@ export default function Timeline(props: Props) {
                 .defined(s => Boolean(s.measured?.trig))
                 .x((s, i) => tScale(i))
                 .y(s => tempScale(s.measured?.trig || 0)));
+
+        // Wind speed.
+        svg
+            .append('path')
+            .datum(samples)
+            .attr('fill', colors.windSpeed)
+            .attr('stroke-width', 0)
+            .attr('opacity', 0.2)
+            .attr('d', d3.area<CalcHourData>()
+                .defined(s => Boolean(s.virtual?.windSpeed))
+                .x((s, i) => tScale(i))
+                .y0(windScale(0))
+                .y1(s => windScale(s.virtual?.windSpeed[0] || 0))
+            );
+
+        // Wind direction and text.
+        samples.forEach((s, i) => {
+            const dir = s.virtual?.windDir[0];
+            const speed = s.virtual?.windSpeed[0];
+            const magnitude = Math.min(1, speed === undefined ? 0 : speed / 20)
+            const size = 5 + magnitude * 10;
+            const color = windColorScale[Math.floor(magnitude * windColorScale.length)];
+            const x = tScale(i);
+            const y = windY[0] - 24;
+            const arrowId = `wind-dir-arrow-${i}`;
+
+            // Wind direction arrow.
+            if (dir !== undefined) {
+                svg.append('marker')
+                    .attr('id', arrowId)
+                    .attr('viewBox', [0, 0, size, size])
+                    .attr('refX', size / 2)
+                    .attr('refY', size / 2)
+                    .attr('markerWidth', size / 2)
+                    .attr('markerHeight', size / 2)
+                    .attr('orient', 'auto-start-reverse')
+                    .append('path')
+                    .attr('d', d3.line()([[0, 0], [0, size], [size, size / 2]]))
+                    .attr('stroke', color)
+                    .attr('fill', color);
+
+                svg
+                    .append('path')
+                    .datum([
+                        [x, y + size / 2],
+                        [x, y - size / 2],
+                    ])
+                    .attr('transform', `rotate(${dir + 180}, ${x}, ${y})`)
+                    .attr('fill', 'none')
+                    .attr('stroke', color)
+                    .attr('stroke-width', 1)
+                    .attr('marker-end', `url(#${arrowId})`)
+                    .attr('d', d3.line());
+            }
+
+            // Wind speed text.
+            svg
+                .append('text')
+                .attr('x', tScale(i))
+                .attr('y', windY[0] - 8)
+                .attr('font-size', '8px')
+                .attr('text-anchor', 'middle')
+                .text(speed === undefined ? 'N/A' : `${speed}kt`);
+
+            // Wind direction text.
+            svg
+                .append('text')
+                .attr('x', tScale(i))
+                .attr('y', windY[0])
+                .attr('font-size', '7px')
+                .attr('text-anchor', 'middle')
+                .text(dir === undefined ? 'N/A' : `${dir}`);
+        });
 
         // Draw a button for each hour.
         samples.forEach((s, i) => {

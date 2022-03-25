@@ -35,7 +35,10 @@ const weekdayName = new Map([
     [6, 'Sat'],
 ]);
 
-export function windDirName(v: number): string {
+export function windDirName(v: number | undefined): string {
+    if (v === undefined) {
+        return '';
+    }
     const dirs = [
         'N', 'NNE', 'NE', 'NEE',
         'E', 'SEE', 'SE', 'SSE',
@@ -56,6 +59,7 @@ export const colors = {
     CB: '#2687DC',
     ground: '#FDB84E',
     selected: '#DFFD4E',
+    windSpeed: '#0C73B2',
 }
 
 export function dateTimeURLFormat(d: Date | null): string {
