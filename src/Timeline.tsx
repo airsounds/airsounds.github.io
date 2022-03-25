@@ -8,11 +8,11 @@ import { Modal, Image, Button } from 'react-bootstrap';
 import Sounding from './Sounding';
 import { CalcData, CalcHourData } from './calc';
 import { useTranslation } from 'react-i18next';
-import { Errorf } from './data';
+import { LocationData, Errorf } from './data';
 
 type Props = {
     data: CalcData;
-    place: string;
+    location: LocationData;
     date: Date;
     selectedTime: Date;
     setSelectedTime: (time: Date) => void;
@@ -37,7 +37,7 @@ export default function Timeline(props: Props) {
     const [soundingShown, setSoundingShown] = useState(false);
 
     useEffect(() => {
-        const samples = Object.values(props.data[props.place])
+        const samples = Object.values(props.data[props.location.name])
             .sort((a, b) => a.t.getTime() - b.t.getTime());
         console.debug(`samples ${dateFormat(props.date)}:`, samples);
         setSamples(samples);
@@ -401,6 +401,12 @@ export default function Timeline(props: Props) {
             const y = windY[0] - 24;
             const arrowId = `wind-dir-arrow-${i}`;
 
+            const runwayDir = props.location.runway_dir;
+
+            const crosswind = runwayDir !== undefined && dir !== undefined && speed !== undefined
+                ? Math.round(Math.sin((runwayDir - dir) * Math.PI / 180) * speed * 10) / 10
+                : undefined;
+
             // Wind direction arrow.
             if (dir !== undefined) {
                 svg.append('marker')
@@ -447,6 +453,26 @@ export default function Timeline(props: Props) {
                 .attr('font-size', '7px')
                 .attr('text-anchor', 'middle')
                 .text(dir === undefined ? 'N/A' : `${dir}`);
+
+            // Wind cross wind
+            if (crosswind && crosswind > 10) {
+                svg
+                    .append('text')
+                    .attr('x', tScale(i))
+                    .attr('y', windY[0] - 43)
+                    .attr('font-size', '6px')
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', 'red')
+                    .text(`Cross`);
+                svg
+                    .append('text')
+                    .attr('x', tScale(i))
+                    .attr('y', windY[0] - 35)
+                    .attr('font-size', '8px')
+                    .attr('text-anchor', 'middle')
+                    .attr('fill', 'red')
+                    .text(`${crosswind}kt`);
+            }
         });
 
         // Draw a button for each hour.
@@ -493,12 +519,13 @@ export default function Timeline(props: Props) {
                         onClick={() => setSoundingShown(false)}>
                         <Modal.Header className='justify-content-center'>
                             <Modal.Title>
-                                {`${t('Chart for')} ${dateTimeURLFormat(props.date)}`}
+                                {`${t('Chart for')} ${dateTimeURLFormat(props.date)
+                                    } `}
                             </Modal.Title>
                         </Modal.Header>
                         <Modal.Body>
                             <Sounding
-                                data={props.data[props.place]}
+                                data={props.data[props.location.name]}
                                 time={props.selectedTime}
                                 setError={props.setError}
                             />

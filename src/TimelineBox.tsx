@@ -41,6 +41,11 @@ export default function TimelineBox(props: Props) {
         getDataAndCalc();
     }, [props]);
 
+    const location = props.locations.find(l => l.name === props.place);
+    if (!location) {
+        return <></>;
+    }
+
     return (
         <Row className='justify-content-center' >
             <Col
@@ -64,7 +69,7 @@ export default function TimelineBox(props: Props) {
                         {data &&
                             <Timeline
                                 data={data}
-                                place={props.place}
+                                location={location}
                                 date={props.date}
                                 selectedTime={props.selectedTime}
                                 setSelectedTime={props.setSelectedTime}

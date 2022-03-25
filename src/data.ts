@@ -49,7 +49,8 @@ export type LocationData = {
     lat: number; // float32
     long: number; // float32
     alt: number; // int
-    uwyo_station: string;
+    uwyo_station: number; // int
+    runway_dir: number; // int
 };
 
 export type Errorf = (error: Error | null) => void;
