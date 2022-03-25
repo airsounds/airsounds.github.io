@@ -452,7 +452,7 @@ export default function Timeline(props: Props) {
                 .attr('y', windY[0])
                 .attr('font-size', '7px')
                 .attr('text-anchor', 'middle')
-                .text(dir === undefined ? 'N/A' : `${dir}`);
+                .text(dir === undefined ? 'N/A' : `${dir}°`);
 
             // Wind cross wind
             if (crosswind && crosswind > 10) {
