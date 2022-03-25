@@ -1,7 +1,7 @@
 import React, { useEffect, LegacyRef } from 'react';
 import useD3 from './hooks/useD3';
 import * as d3 from 'd3';
-import { altMax, tempMax, windMax, xTick, yTick, y, colors } from './utils';
+import { altMax, tempMax, windMax, xTick, yTick, y, colors, windDirName } from './utils';
 import { Hour, Errorf } from './data';
 import { CalcHourData, HourlyData } from './calc'
 import "./App.css"
@@ -411,16 +411,4 @@ export default function Sounding({ data, time, setError }: Props) {
         <svg ref={ref as LegacyRef<SVGSVGElement>} className='Sounding' >
         </svg>
     );
-}
-
-function windDirName(v: number): string {
-    const dirs = [
-        'N', 'NNW', 'NW', 'NWW',
-        'W', 'SWW', 'SW', 'SSW',
-        'S', 'SSE', 'SE', 'SEE',
-        'E', 'NEE', 'NE', 'NNE',
-    ]
-    var part = 360 / dirs.length
-    var i = Math.floor((v + part / 2) / part)
-    return dirs[i]
 }

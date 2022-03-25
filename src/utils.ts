@@ -35,6 +35,18 @@ const weekdayName = new Map([
     [6, 'Sat'],
 ]);
 
+export function windDirName(v: number): string {
+    const dirs = [
+        'N', 'NNE', 'NE', 'NEE',
+        'E', 'SEE', 'SE', 'SSE',
+        'S', 'SSW', 'SW', 'SWW',
+        'W', 'NWW', 'NW', 'NNW',
+    ]
+    var part = 360 / dirs.length
+    var i = Math.floor((v + part / 2) / part)
+    return dirs[i]
+}
+
 export const colors = {
     virtTI: '#4BC9FF',
     measuredTI: '#58CF3F',
