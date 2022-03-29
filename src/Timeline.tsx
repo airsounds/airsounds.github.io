@@ -3,12 +3,14 @@ import "./App.css"
 import useD3 from './hooks/useD3';
 import useRect from './hooks/useRect';
 import * as d3 from 'd3';
-import { altMax, tempMax, dateTimeURLFormat, dateFormat, hourFormat, colors } from './utils';
+import * as draw from './draw';
+import { altMax, tempMax, dateTimeURLFormat, dateFormat, hourFormat, colors, crosswind } from './utils';
 import { Modal, Image, Button } from 'react-bootstrap';
 import Sounding from './Sounding';
 import { CalcData, CalcHourData } from './calc';
 import { useTranslation } from 'react-i18next';
 import { LocationData, Errorf } from './data';
+
 
 type Props = {
     data: CalcData;
@@ -399,41 +401,19 @@ export default function Timeline(props: Props) {
             const color = windColorScale[Math.floor(magnitude * windColorScale.length)];
             const x = tScale(i);
             const y = windY[0] - 24;
-            const arrowId = `wind-dir-arrow-${i}`;
 
             const runwayDir = props.location.runway_dir;
 
-            const crosswind = runwayDir !== undefined && dir !== undefined && speed !== undefined
-                ? Math.round(Math.sin((runwayDir - dir) * Math.PI / 180) * speed * 10) / 10
-                : undefined;
+            const cw = crosswind(speed, dir, runwayDir);
 
             // Wind direction arrow.
             if (dir !== undefined) {
-                svg.append('marker')
-                    .attr('id', arrowId)
-                    .attr('viewBox', [0, 0, size, size])
-                    .attr('refX', size / 2)
-                    .attr('refY', size / 2)
-                    .attr('markerWidth', size / 2)
-                    .attr('markerHeight', size / 2)
-                    .attr('orient', 'auto-start-reverse')
-                    .append('path')
-                    .attr('d', d3.line()([[0, 0], [0, size], [size, size / 2]]))
-                    .attr('stroke', color)
-                    .attr('fill', color);
-
-                svg
-                    .append('path')
-                    .datum([
-                        [x, y + size / 2],
-                        [x, y - size / 2],
-                    ])
-                    .attr('transform', `rotate(${dir + 180}, ${x}, ${y})`)
-                    .attr('fill', 'none')
-                    .attr('stroke', color)
-                    .attr('stroke-width', 1)
-                    .attr('marker-end', `url(#${arrowId})`)
-                    .attr('d', d3.line());
+                const arrowDir = dir + 180; // Make the arrow point from the direction of the wind.
+                draw.arrow(
+                    svg, `wind-dir-arrow-${i}`,
+                    x, y,
+                    arrowDir,
+                    size, color);
             }
 
             // Wind speed text.
@@ -455,7 +435,7 @@ export default function Timeline(props: Props) {
                 .text(dir === undefined ? (speed === undefined ? '' : 'N/A') : `${dir}°`);
 
             // Wind cross wind
-            if (crosswind && crosswind > 10) {
+            if (cw && cw > 10) {
                 svg
                     .append('text')
                     .attr('x', tScale(i))

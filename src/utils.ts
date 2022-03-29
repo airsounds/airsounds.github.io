@@ -35,21 +35,6 @@ const weekdayName = new Map([
     [6, 'Sat'],
 ]);
 
-export function windDirName(v: number | undefined): string {
-    if (v === undefined) {
-        return '';
-    }
-    const dirs = [
-        'N', 'NNE', 'NE', 'NEE',
-        'E', 'SEE', 'SE', 'SSE',
-        'S', 'SSW', 'SW', 'SWW',
-        'W', 'NWW', 'NW', 'NNW',
-    ]
-    var part = 360 / dirs.length
-    var i = Math.floor((v + part / 2) / part)
-    return dirs[i]
-}
-
 export const colors = {
     virtTI: '#4BC9FF',
     measuredTI: '#58CF3F',
@@ -157,4 +142,12 @@ export function intersect(x: Array<number>, y: Array<number>, x0: number, y0: nu
     // Calculate the linear line value in the intersection location.
     const yi = y0 + m0 * (xi - x0)
     return [xi, yi]
+}
+
+export function crosswind(windSpeed: number | undefined, windDir: number | undefined, runwayDir: number | undefined): number | undefined {
+    if (runwayDir === undefined || windDir === undefined || windSpeed === undefined) {
+        return undefined;
+    }
+    const crosswind = Math.sin((runwayDir - windDir) * Math.PI / 180) * windSpeed
+    return Math.abs(Math.round(crosswind * 10) / 10);
 }

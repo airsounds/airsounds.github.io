@@ -1,7 +1,8 @@
 import React, { useEffect, LegacyRef } from 'react';
 import useD3 from './hooks/useD3';
 import * as d3 from 'd3';
-import { altMax, tempMax, windMax, xTick, yTick, y, colors, windDirName } from './utils';
+import * as draw from './draw';
+import { altMax, tempMax, windMax, xTick, yTick, y, colors } from './utils';
 import { Hour, Errorf } from './data';
 import { CalcHourData, HourlyData } from './calc'
 import "./App.css"
@@ -305,9 +306,13 @@ export default function Sounding({ data, time, setError }: Props) {
             drawLine(svg, data.windSpeed, data.alt,
                 { color: '#444444', xScale: windScale, dashed: dashed })
             for (let i in data.windSpeed) {
-                const dir = windDirName(data.windDir[i])
-                drawText(svg, data.windSpeed[i], data.alt[i], data.windSpeed[i] + dir,
-                    { size: 10, xScale: windScale })
+                const arrowDir = data.windDir[i] + 180; // Make the arrow point from the direction of the wind.
+                draw.arrow(
+                    svg,
+                    `wind-${i}`,
+                    windScale(data.windSpeed[i]), altScale(data.alt[i]),
+                    arrowDir,
+                    10, '#444444')
             }
         }
 
