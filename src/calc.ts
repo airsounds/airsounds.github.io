@@ -26,6 +26,9 @@ export interface HourlyData {
     windDir: number[];
     windSpeed: number[];
 
+    groundWindDir: number;
+    groundWindSpeed: number;
+
     TI: number;
     TIM3: number;
     CB: number;
@@ -93,6 +96,9 @@ function calcHourSounding(
         h0: placeInfo.alt, // Ground altitude.
         windDir: soundingData.WindDir,
         windSpeed: soundingData.WindSpeed,
+
+        groundWindDir: forecast.WindDir,
+        groundWindSpeed: forecast.WindSpeed,
 
         TI: placeInfo.alt,
         TIM3: placeInfo.alt,

@@ -394,8 +394,8 @@ export default function Timeline(props: Props) {
 
         // Wind direction and text.
         samples.forEach((s, i) => {
-            const dir = s.virtual?.windDir[0];
-            const speed = s.virtual?.windSpeed[0];
+            const dir = s.virtual?.groundWindDir;
+            const speed = s.virtual?.groundWindSpeed;
             const magnitude = Math.min(1, speed === undefined ? 0 : speed / 20)
             const size = 5 + magnitude * 10;
             const color = windColorScale[Math.floor(magnitude * windColorScale.length)];
