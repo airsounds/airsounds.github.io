@@ -39,8 +39,10 @@ export default function Timeline(props: Props) {
     const [soundingShown, setSoundingShown] = useState(false);
 
     useEffect(() => {
-        const samples = Object.values(props.data[props.location.name])
-            .sort((a, b) => a.t.getTime() - b.t.getTime());
+        const data = props.data[props.location.name];
+        const samples = (data)
+            ? Object.values(data).sort((a, b) => a.t.getTime() - b.t.getTime())
+            : [];
         console.debug(`samples ${dateFormat(props.date)}:`, samples);
         setSamples(samples);
     }, [props]);
