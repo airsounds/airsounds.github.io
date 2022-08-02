@@ -501,7 +501,7 @@ export default function Timeline(props: Props) {
                         onClick={() => setSoundingShown(false)}>
                         <Modal.Header className='justify-content-center'>
                             <Modal.Title>
-                                {`${t('Chart for')} ${dateTimeURLFormat(props.date)
+                                {`${t('Chart for')} ${dateTimeURLFormat(props.selectedTime)
                                     } `}
                             </Modal.Title>
                         </Modal.Header>
